@@ -1,0 +1,59 @@
+{
+  "name": "bedrock_kb",
+  "version": "1.0.0",
+  "description": "Bedrock Knowledge Base retrieval tool for ESG chatbot",
+  "kb_config": {
+    "kb_id": "HGDLU1PVQE",
+    "region": "us-west-2",
+    "profile": "profile2",
+    "default_num_results": 10,
+    "default_search_type": "HYBRID"
+  },
+  "tools": [
+    {
+      "name": "get_esg_knowledge",
+      "description": "Retrieve ESG knowledge and information from Samsung C&T 2025 Sustainability Report. Use this tool when users ask about ESG topics, sustainability practices, environmental impact, social responsibility, or governance matters.",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "description": "User query or question about ESG topics",
+          "required": true
+        },
+        "num_results": {
+          "type": "integer",
+          "description": "Number of results to return",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 100,
+          "required": false
+        }
+      }
+    },
+    {
+      "name": "search_esg_documents",
+      "description": "Search ESG documents with configurable search type. Supports hybrid (keyword+semantic), pure semantic, or pure keyword search.",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "description": "Search query",
+          "required": true
+        },
+        "search_type": {
+          "type": "string",
+          "description": "Search type: HYBRID, SEMANTIC, or KEYWORD",
+          "default": "HYBRID",
+          "enum": ["HYBRID", "SEMANTIC", "KEYWORD"],
+          "required": false
+        },
+        "num_results": {
+          "type": "integer",
+          "description": "Number of results to return",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 100,
+          "required": false
+        }
+      }
+    }
+  ]
+}

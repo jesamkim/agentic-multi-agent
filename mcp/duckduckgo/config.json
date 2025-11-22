@@ -1,0 +1,41 @@
+{
+  "name": "duckduckgo-search",
+  "version": "1.0.0",
+  "description": "DuckDuckGo web search MCP server for finding external information",
+  "tools": [
+    {
+      "name": "web_search",
+      "description": "Search the web using DuckDuckGo for general information about ESG, companies, and sustainability topics",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "description": "Search query string"
+        },
+        "max_results": {
+          "type": "integer",
+          "description": "Maximum number of results to return (default: 10)",
+          "default": 10
+        }
+      }
+    },
+    {
+      "name": "news_search",
+      "description": "Search for recent news articles using DuckDuckGo",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "description": "News search query"
+        },
+        "max_results": {
+          "type": "integer",
+          "description": "Maximum number of results to return (default: 10)",
+          "default": 10
+        }
+      }
+    }
+  ],
+  "settings": {
+    "default_max_results": 10,
+    "default_region": "kr-kr"
+  }
+}

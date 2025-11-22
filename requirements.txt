@@ -1,0 +1,36 @@
+# AWS SDK for Bedrock integration
+boto3>=1.35.0
+botocore>=1.35.0
+
+# PDF to Image conversion
+pdf2image>=1.17.0
+
+# PDF image extraction
+pymupdf>=1.24.0
+
+# Image processing
+Pillow>=10.0.0
+
+# JSON handling and utilities
+python-dotenv>=1.0.0
+
+# Multi-Agent RAG Chatbot Dependencies
+# Strands Agents SDK for multi-agent systems
+strands-agents>=0.1.0
+strands-agents-tools>=0.1.0
+
+# Observability and monitoring
+langfuse>=2.0.0
+
+# Data validation and serialization
+pydantic>=2.0.0
+
+# CLI interface utilities
+rich>=13.0.0
+
+# Testing framework
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+
+# Web search capabilities
+duckduckgo-search>=6.0.0
