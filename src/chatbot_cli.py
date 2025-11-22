@@ -136,8 +136,20 @@ Welcome to the Samsung C&T ESG chatbot powered by Strands Agents.
             try:
                 self.console.print("\n[yellow]Processing your question...[/yellow]")
 
-                # Call supervisor agent
-                response = self.agent(current_question)
+                # Build context from recent conversation history
+                context = ""
+                if self.chat_history:
+                    # Include last 2 exchanges for context
+                    recent_history = self.chat_history[-2:]
+                    for q, a in recent_history:
+                        context += f"Previous Q: {q}\nPrevious A: {a}\n\n"
+
+                    full_question = f"{context}Current question: {current_question}"
+                else:
+                    full_question = current_question
+
+                # Call supervisor agent with context
+                response = self.agent(full_question)
                 response_text = str(response)
 
                 # Check if clarification is needed

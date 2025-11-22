@@ -1,66 +1,55 @@
 """
 Report Generation Agent
 
-Specialized agent for creating detailed ESG analysis reports.
-Generates comprehensive HTML/PDF reports when user requests.
+Specialized agent for generating HTML report sections.
+Used by stepwise append approach - generates one section at a time.
 """
 
 from strands import Agent
-from src.tools import generate_detailed_report
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-REPORT_SYSTEM_PROMPT = """You are a report generation specialist for ESG analysis.
+REPORT_SYSTEM_PROMPT = """You are an HTML report section generator for ESG analysis.
 
-Your role is to create comprehensive, professional reports based on ESG analysis data.
+**Your role:**
+Generate ONLY the requested section in pure HTML format.
 
-**When generating reports:**
-1. Structure content with clear sections (Executive Summary, Analysis, Conclusions)
-2. Use tables for comparative data
-3. Include all relevant metrics and findings
-4. Provide context and interpretation
-5. Add recommendations if applicable
+**CRITICAL OUTPUT FORMAT:**
+- Output ONLY HTML tags - NO code block markers
+- DO NOT wrap output in ```html ... ```
+- DO NOT use Markdown syntax (no ##, **, -, etc.)
+- Start directly with <h2> tag
+- Pure HTML tags only: <h2>, <h3>, <p>, <table>, <ul>, <li>, <strong>
 
-**Report Structure:**
-```
-<h1>Executive Summary</h1>
-<p>[2-3 paragraph overview]</p>
+**LANGUAGE:**
+- ALWAYS write in KOREAN (한글)
+- Technical terms can include English in parentheses
+- Example: "탄소배출량(Carbon Emissions)"
 
-<h2>Detailed Analysis</h2>
-<p>[Main findings with data]</p>
-
-<h3>Comparative Metrics</h3>
-<table>
-  <tr><th>Company</th><th>Metric</th><th>Performance</th></tr>
-  ...
-</table>
-
-<h2>Key Insights</h2>
-<ul>
-  <li>[Insight 1]</li>
-  <li>[Insight 2]</li>
-</ul>
-
-<h2>Conclusions</h2>
-<p>[Summary and recommendations]</p>
-```
+**Section types you'll be asked to generate:**
+1. Executive Summary - 2-3 substantial paragraphs in KOREAN
+2. Detailed Analysis - Multiple subsections with tables in KOREAN
+3. Conclusions and Recommendations - Summary in KOREAN
 
 **Important:**
-- Use HTML tags (h1, h2, h3, p, table, ul, li)
-- Include all numerical data and sources
-- Provide comprehensive analysis (this is a REPORT, not chat)
-- Be thorough and professional
-
-Generate detailed, high-quality reports."""
+- Generate ONLY the section requested (not full report)
+- Use proper HTML structure
+- Be comprehensive and professional
+- KOREAN language required
+- NO code block markers
+- Your output will be appended to an HTML file"""
 
 
 def create_report_agent(
     model: str = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 ) -> Agent:
     """
-    Create Report Generation Agent.
+    Create Report Section Generator Agent.
+
+    Generates individual HTML sections (not full reports).
+    Used by stepwise append approach.
 
     Args:
         model: Bedrock model ID
@@ -70,11 +59,11 @@ def create_report_agent(
     """
     agent = Agent(
         model=model,
-        tools=[generate_detailed_report],
+        tools=[],  # No tools - pure HTML section generation
         system_prompt=REPORT_SYSTEM_PROMPT
     )
 
-    logger.info(f"Created Report Agent with model: {model}")
+    logger.info(f"Created Report Section Agent with model: {model}")
     return agent
 
 
@@ -123,8 +112,10 @@ def create_report_with_fallback(prompt: str) -> str:
             raise
 
 
-# Create default report agent
-report_agent = create_report_agent()
+# Create default report agent with Haiku 4.5 (faster, no timeout)
+report_agent = create_report_agent(
+    model="global.anthropic.claude-haiku-4-5-20251001-v1:0"
+)
 
 
 __all__ = [

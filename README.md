@@ -1,78 +1,88 @@
-# Agentic Multi-Agent ESG Analysis System
+# Multi-Agent System DEMO using Samsung C&T ESG Report
 
-> **AWS Solutions Architect PoC**: Production-ready multi-agent system powered by Strands Agents, Agent-to-Agent (A2A) communication, and Model Context Protocol (MCP)
+> AWS Solutions Architect PoC: Production-ready multi-agent system powered by Strands Agents, A2A communication, and Model Context Protocol (MCP)
 
 [![Amazon Bedrock](https://img.shields.io/badge/AWS-Bedrock-FF9900?logo=amazon-aws)](https://aws.amazon.com/bedrock/)
 [![Claude Sonnet 4.5](https://img.shields.io/badge/Claude-Sonnet%204.5-8A2BE2)](https://www.anthropic.com/claude)
 [![Strands Agents](https://img.shields.io/badge/Strands-Agents%201.18.0-00D9FF)](https://strandsagents.com/)
 [![MCP](https://img.shields.io/badge/Protocol-MCP-green)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/tests-13%2F13%20passing-success)](#testing)
 
 **Key Achievements:**
-- 6x efficiency improvement (60 → 5-10 tool calls)
-- 100% document conversion success (124 pages)
-- Production-ready multi-agent orchestration
+- 100% document conversion (124-page PDF → Markdown with 95%+ accuracy)
+- Production-ready multi-agent orchestration with A2A communication
+- Intelligent report generation with timeout prevention
 - Sub-30s response time for complex queries
 
 ---
 
 ## Overview
 
-This project demonstrates an advanced **agentic multi-agent architecture** for enterprise ESG (Environmental, Social, Governance) analysis. Built as a Proof of Concept to showcase modern AI agent patterns, it combines Amazon Bedrock, Strands Agents framework, and Model Context Protocol to create an intelligent, scalable system for analyzing sustainability reports.
+Advanced **agentic multi-agent system** for enterprise ESG analysis. Built as AWS Solutions Architect DEMO, combining Amazon Bedrock, Strands Agents framework, and Model Context Protocol for intelligent sustainability report analysis.
 
-**Use Case:** Real-time Q&A and comprehensive reporting on Samsung C&T's 2025 Sustainability Report (124 pages, publicly available document).
+**Use Case:** Real-time Q&A and comprehensive HTML/PDF reporting on Samsung C&T's 2025 Sustainability Report (124 pages, publicly available document).
 
 **Technical Highlights:**
-- Dynamic **Planner-Executor pattern** for complex multi-step reasoning
 - **7 specialized agents** with intelligent orchestration
-- **3 MCP servers** for tool integration
-- Smart clarification loop with minimal user friction
-- Early termination optimization for cost efficiency
-- Adaptive complexity handling (5/10/15 step limits)
+- **Planner-Executor pattern** for complex multi-step reasoning
+- **Intelligent Report Agent** with adaptive data collection
+- **3 MCP servers** (Bedrock KB, DuckDuckGo, HTML2PDF)
+- Smart clarification loop at any stage
+- 3-stage report generation (timeout prevention)
+
+### Demo: System in Action
+
+![System Demo](./img/Screenshot01.png)
+
+*Real-time ESG analysis with intelligent report generation. The screenshot demonstrates:*
+- *Structured answers with Rich CLI formatting (핵심 발견사항, TOP 3 투자 우선순위, 주요 리스크)*
+- *Intelligent data collection: Report Agent automatically calls `get_additional_esg_data` when needed*
+- *Multi-tool execution: `create_detailed_report` → `get_additional_esg_data` → `get_esg_knowledge` (Bedrock KB)*
+- *Samsung C&T ESG data retrieval from Knowledge Base (기후변화 대응, 온실가스 배출 실적)*
 
 ---
 
 ## System Architecture
 
-### Complete System Diagram
+### High-Level Architecture with A2A and MCP
 
 ```mermaid
 flowchart TD
     User[User Interface<br/>CLI with Rich Formatting] --> Supervisor[Supervisor Agent V2<br/>Claude Sonnet 4.5<br/>Orchestrator + Clarification]
 
-    Supervisor --> |Simple Query| DirectAnswer[Direct Answer Generation]
-    Supervisor --> |ESG Query| A2A_ESG[call_esg_agent<br/>A2A Tool]
-    Supervisor --> |Web Query| A2A_Research[call_research_agent<br/>A2A Tool]
-    Supervisor --> |Complex Query| A2A_Plan[create_and_execute_plan<br/>A2A Tool]
-    Supervisor --> |Report Request| A2A_Report[generate_report<br/>A2A Tool]
+    Supervisor -->|Simple Query| A2A_ESG[call_esg_agent<br/>A2A Communication]
+    Supervisor -->|External Query| A2A_Research[call_research_agent<br/>A2A Communication]
+    Supervisor -->|Complex Query| A2A_Plan[create_and_execute_plan<br/>A2A Communication]
+    Supervisor -->|Report Request| A2A_Report[create_detailed_report<br/>A2A Communication]
 
     A2A_ESG --> ESGAgent[ESG Agent<br/>Claude Sonnet 4.5<br/>Samsung C&T Specialist]
     A2A_Research --> ResearchAgent[Research Agent<br/>Claude Sonnet 4.5<br/>Web Search Specialist]
-    A2A_Report --> ReportAgent[Report Agent<br/>Claude Sonnet 4.5<br/>HTML/PDF Generator]
 
     A2A_Plan --> Planner[Planner Agent<br/>Claude Sonnet 4.5<br/>JSON Plan Creator]
-    Planner --> |ExecutionPlan| Executor[Executor<br/>Sequential + Early Termination]
+    Planner -->|ExecutionPlan JSON| Executor[Executor<br/>Sequential + Early Termination]
 
-    Executor --> |Step: kb_query| ESGAgent
-    Executor --> |Step: web_search| ResearchAgent
-    Executor --> |Step: aggregate| Aggregator[Aggregator Agent<br/>Claude Sonnet 4.5<br/>Data Synthesizer]
-    Executor --> |Step: compare| Aggregator
+    Executor -->|Step: kb_query| ESGAgent
+    Executor -->|Step: web_search| ResearchAgent
+    Executor -->|Step: aggregate| Aggregator[Aggregator Agent<br/>Claude Sonnet 4.5<br/>Data Synthesizer]
+    Executor -->|Step: compare| Aggregator
 
-    ESGAgent --> MCP_KB[MCP: Bedrock KB Tool<br/>get_esg_knowledge]
-    ResearchAgent --> MCP_Search[MCP: DuckDuckGo Tools<br/>web_search + news_search]
-    ReportAgent --> MCP_PDF[MCP: HTML2PDF<br/>Node.js Puppeteer]
+    A2A_Report --> ReportAgent[Report Agent<br/>Claude Haiku 4.5<br/>Intelligent Report Generator]
+    ReportAgent -->|If data insufficient| ReportA2A_ESG[get_additional_esg_data<br/>A2A to ESG Agent]
+    ReportAgent -->|If data insufficient| ReportA2A_Research[get_additional_research_data<br/>A2A to Research Agent]
+    ReportA2A_ESG --> ESGAgent
+    ReportA2A_Research --> ResearchAgent
 
-    MCP_KB --> BedrockKB[Amazon Bedrock<br/>Knowledge Base<br/>HGDLU1PVQE<br/>Hybrid Search]
-    MCP_Search --> DuckDuckGo[DuckDuckGo API<br/>Web + News Search]
-    MCP_PDF --> PDFEngine[Puppeteer<br/>HTML → PDF<br/>Scale 80%]
+    ESGAgent -->|MCP Tool| MCP_KB[Bedrock KB Tool<br/>get_esg_knowledge<br/>Hybrid Search]
+    ResearchAgent -->|MCP Tools| MCP_Search[DuckDuckGo Tools<br/>web_search<br/>news_search]
+    ReportAgent -->|3-Stage Generation| MCP_PDF[HTML2PDF Tool<br/>Puppeteer<br/>scale 80%]
 
-    BedrockKB --> BedrockRuntime[Amazon Bedrock Runtime<br/>Claude Sonnet 4.5<br/>Inference Profile]
+    MCP_KB -->|boto3| BedrockKB[Amazon Bedrock<br/>Knowledge Base]
+    MCP_Search -->|API| DuckDuckGo[DuckDuckGo<br/>Web + News Search]
+    MCP_PDF -->|subprocess| PDFEngine[Node.js Puppeteer<br/>HTML → PDF]
 
-    DirectAnswer --> User
-    ESGAgent --> User
-    ResearchAgent --> User
-    Executor --> User
-    ReportAgent --> User
+    BedrockKB --> BedrockRuntime[AWS Bedrock Runtime<br/>Claude Sonnet 4.5<br/>Inference Profile]
+
+    Supervisor -.->|Clarification| User
+    ReportAgent -.->|Clarification if needed| User
 
     style Supervisor fill:#FF6B6B,stroke:#C92A2A,stroke-width:3px,color:#fff
     style Planner fill:#4ECDC4,stroke:#087F5B,stroke-width:2px,color:#fff
@@ -86,64 +96,521 @@ flowchart TD
     style MCP_PDF fill:#FFE66D,stroke:#F59F00,stroke-width:2px
     style BedrockKB fill:#A8DADC,stroke:#1864AB,stroke-width:2px
     style BedrockRuntime fill:#A8DADC,stroke:#1864AB,stroke-width:2px
+    style A2A_ESG fill:#FFB4A2,stroke:#E03131,stroke-width:2px
+    style A2A_Research fill:#FFB4A2,stroke:#E03131,stroke-width:2px
+    style A2A_Plan fill:#FFB4A2,stroke:#E03131,stroke-width:2px
+    style A2A_Report fill:#FFB4A2,stroke:#E03131,stroke-width:2px
+    style ReportA2A_ESG fill:#FFB4A2,stroke:#E03131,stroke-width:2px
+    style ReportA2A_Research fill:#FFB4A2,stroke:#E03131,stroke-width:2px
 ```
 
 **Legend:**
 - **Red**: Orchestrator (Supervisor)
+- **Salmon**: A2A Communication Layer
 - **Teal**: Planning & Execution
 - **Green**: Specialized Agents
 - **Yellow**: MCP Tool Layer
 - **Blue**: AWS Bedrock Services
+- **Dotted**: Clarification Loop
 
-### Architectural Components
+### Key Architectural Principles
 
-| Component | Technology | Role |
-|-----------|-----------|------|
-| **Orchestration** | Strands Agents SDK | Multi-agent coordination with A2A |
-| **LLM** | AWS Bedrock Claude Sonnet 4.5 | All agent reasoning and generation |
-| **Knowledge Base** | AWS Bedrock KB (HGDLU1PVQE) | Samsung C&T ESG document retrieval |
-| **Search** | DuckDuckGo API | External web and news search |
-| **Reporting** | Node.js Puppeteer | HTML to PDF conversion (scale 80%) |
-| **Data Models** | Pydantic 2.12.4 | Structured planning and validation |
-| **Interface** | Rich 14.2.0 | Enhanced CLI with markdown rendering |
+1. **LLM-Driven Routing** - No hardcoding, Supervisor decides based on context
+2. **A2A Communication** - Agents call agents via @tool wrappers
+3. **MCP Integration** - Standardized tool interface for external services
+4. **Clarification at Any Stage** - Agents can ask users for missing info
+5. **Efficiency** - Reuse previous answers, avoid redundant data collection
+6. **Resilience** - 3-stage generation prevents timeout, fallback mechanisms
 
 ---
 
-## Key Technical Innovations
+## Agent Specifications
 
-### 1. Planner-Executor Pattern
+### 1. Supervisor Agent V2 (Orchestrator)
 
-**Challenge:** Traditional routing cannot handle dynamic, multi-step queries like "Compare Samsung C&T's LTIR with top 3 Korean construction companies."
+**Model**: `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
 
-**Solution:** Separate planning from execution with structured JSON plans.
+**Role**: Intelligent orchestrator with routing, clarification, and delegation.
 
-```mermaid
-flowchart LR
-    Query[Complex Query] --> Planner[Planner Agent]
-    Planner --> |JSON ExecutionPlan| Executor[Executor]
-    Executor --> Step1[Step 1: Reasoning]
-    Executor --> Step2[Step 2: Web Search Company A]
-    Executor --> Step3[Step 3: Web Search Company B]
-    Executor --> Step4[Step 4: KB Query Samsung C&T]
-    Executor --> Step5[Step 5: Aggregate Data]
-    Executor --> Step6[Step 6: Compare Results]
-    Step6 --> |Check Early Termination| Decision{Sufficient Data?}
-    Decision --> |Yes, >800 chars| Stop[Stop & Return]
-    Decision --> |No| Step7[Step 7: Continue...]
+**Capabilities:**
+- Question classification (greeting/simple/complex/report)
+- Clarification loop (max 3 rounds, lenient assumptions)
+- Agent routing via 3 A2A tools
+- Conversation history awareness
+- Direct answers for greetings
 
-    style Planner fill:#4ECDC4,stroke:#087F5B,stroke-width:2px,color:#fff
-    style Executor fill:#4ECDC4,stroke:#087F5B,stroke-width:2px,color:#fff
-    style Decision fill:#FFE66D,stroke:#F59F00,stroke-width:2px
-    style Stop fill:#51CF66,stroke:#2B8A3E,stroke-width:2px
+**A2A Tools (3):**
+```python
+1. call_esg_agent(query) → ESG Agent → Bedrock KB
+2. call_research_agent(query) → Research Agent → DuckDuckGo
+3. create_and_execute_plan(query) → Planner + Executor
+4. create_detailed_report(topic, previous_analysis) → Report Agent
 ```
 
-**Key Features:**
-- **Adaptive step limits:** 5/10/15 steps based on complexity
-- **Dependency management:** Sequential execution respecting prerequisites
-- **Early termination:** Stops when sufficient data collected (saves time & cost)
-- **Pydantic validation:** Structured `ExecutionPlan` and `ExecutionStep` models
+**Routing Logic (LLM Decides):**
+- Greeting/chitchat → Direct response
+- Single company ESG → call_esg_agent
+- External company → call_research_agent
+- Multi-company comparison → create_and_execute_plan
+- "보고서" (report) keyword → create_detailed_report
 
-**Code Example:**
+**Implementation**: `src/agents/supervisor_agent_v2.py`
+
+### 2. ESG Agent (Specialist)
+
+**Model**: `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
+
+**Role**: Samsung C&T ESG knowledge expert
+
+**Data Source**:
+- AWS Bedrock Knowledge Base (HGDLU1PVQE)
+- Samsung C&T 2025 Sustainability Report
+- 124 pages, 571KB Markdown, 35 images
+
+**MCP Tool**: `get_esg_knowledge(query, num_results=10)`
+
+**Answer Style (Adaptive):**
+- Chat mode: 3-5 sentences (concise)
+- Report mode: Comprehensive (when query contains "상세하게" or "comprehensive")
+
+**Efficiency:**
+- Call KB tool ONCE per query
+- Hybrid search (keyword + semantic)
+
+**Implementation**: `src/agents/esg_agent.py`
+
+### 3. Research Agent (Specialist)
+
+**Model**: `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
+
+**Role**: External ESG information and competitor research
+
+**MCP Tools:**
+- `web_search(query, max_results=10)` - General web search
+- `news_search(query, max_results=10)` - News articles
+
+**Efficiency Guidelines:**
+- 1-2 searches per company MAX
+- Combine search terms
+- Avoid redundant queries
+
+**Special Function:**
+```python
+def research_multiple_companies(
+    companies: List[str],
+    topic: str
+) -> Dict[str, Any]:
+    """Dynamic N-company research"""
+```
+
+**Implementation**: `src/agents/research_agent.py`
+
+### 4. Planner Agent
+
+**Model**: `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
+
+**Role**: Create structured execution plans for complex questions
+
+**Output**: JSON ExecutionPlan with Pydantic validation
+
+**Adaptive Step Limits:**
+- Simple: MAX 5 steps
+- Medium: MAX 10 steps
+- Complex: MAX 15 steps
+
+**Step Types:**
+```python
+class StepType(str, Enum):
+    REASONING = "reasoning"
+    WEB_SEARCH = "web_search"
+    NEWS_SEARCH = "news_search"
+    KB_QUERY = "kb_query"
+    AGGREGATE = "aggregate"
+    COMPARE = "compare"
+```
+
+**Implementation**: `src/agents/planner_agent.py`
+
+### 5. Executor
+
+**Type**: Python orchestrator (not an LLM agent)
+
+**Role**: Execute plans step-by-step
+
+**Capabilities:**
+- Sequential execution with dependency management
+- Agent routing based on step_type
+- Early termination detection (>800 chars after aggregate/compare)
+- Result aggregation
+
+**Agent Routing:**
+```python
+REASONING → Research Agent
+WEB_SEARCH → Research Agent
+NEWS_SEARCH → Research Agent
+KB_QUERY → ESG Agent
+AGGREGATE → Aggregator Agent
+COMPARE → Aggregator Agent
+```
+
+**Implementation**: `src/agents/executor_agent.py`
+
+### 6. Aggregator Agent
+
+**Model**: `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
+
+**Role**: Data synthesis and comparative analysis
+
+**Capabilities:**
+- Multi-source data collection
+- Metric normalization
+- Comparative analysis
+- Concise summaries (4-6 sentences)
+
+**Tools**: None (pure data processing)
+
+**Implementation**: `src/agents/aggregator_agent.py`
+
+### 7. Report Agent (Intelligent)
+
+**Model**: `global.anthropic.claude-haiku-4-5-20251001-v1:0` (Haiku for speed)
+
+**Role**: Intelligent report generation specialist
+
+**Key Features:**
+- **Evaluate existing data** - Check if previous_analysis is sufficient
+- **Collect additional data** - Call ESG/Research agents if needed
+- **Ask for clarification** - Request user input if data unavailable
+- **3-stage generation** - Prevent timeout
+
+**Tools (3):**
+```python
+1. generate_detailed_report - HTML/PDF creation
+2. get_additional_esg_data - Samsung C&T KB queries (A2A)
+3. get_additional_research_data - External web search (A2A)
+```
+
+**3-Stage Generation:**
+```python
+Stage 1: Executive Summary (200-300 tokens)
+Stage 2: Detailed Analysis (1000-1500 tokens)
+Stage 3: Conclusions (300-500 tokens)
+
+# Each stage = separate API call = no timeout
+```
+
+**Decision Logic:**
+```
+IF previous_analysis sufficient:
+    → Generate report (3 stages)
+
+IF previous_analysis insufficient:
+    → get_additional_esg_data / get_additional_research_data
+    → Generate report
+
+IF data unavailable from KB/Web:
+    → Return "CLARIFICATION_NEEDED: [questions]"
+    → User answers
+    → Generate report
+```
+
+**Implementation**: `src/agents/report_agent.py`
+
+---
+
+## Agent-to-Agent (A2A) Communication
+
+### A2A Pattern
+
+Strands Agents uses **agents as tools** pattern:
+
+```python
+from strands import Agent, tool
+
+# Specialized agents
+esg_agent = Agent(
+    model="claude-sonnet-4.5",
+    tools=[get_esg_knowledge],
+    system_prompt="Samsung C&T specialist..."
+)
+
+# Wrap as tool for A2A
+@tool
+def call_esg_agent(query: str) -> str:
+    """Call ESG specialist."""
+    response = esg_agent(query)  # ← A2A communication
+    return str(response)
+
+# Supervisor uses A2A tools
+supervisor = Agent(
+    model="claude-sonnet-4.5",
+    tools=[call_esg_agent, call_research_agent, ...],
+    system_prompt="Route questions..."
+)
+```
+
+### A2A Communication Flows
+
+#### Flow 1: Simple Question
+```
+User: "삼성물산 탄소배출량은?"
+  ↓
+Supervisor (LLM decides)
+  ↓
+call_esg_agent (A2A)
+  ↓
+ESG Agent
+  ↓
+MCP: get_esg_knowledge (KB search)
+  ↓
+User: "543만 톤CO2e, 2030년까지 30% 감축 목표입니다."
+
+(3-5 seconds, 2 tool calls)
+```
+
+#### Flow 2: Complex Comparison
+```
+User: "삼성물산과 GS건설 LTIR 비교"
+  ↓
+Supervisor (LLM decides)
+  ↓
+create_and_execute_plan (A2A)
+  ↓
+Planner → JSON Plan (8 steps)
+  ↓
+Executor:
+  Step 1-2: call_research_agent (A2A) → GS건설 LTIR
+  Step 3: call_esg_agent (A2A) → 삼성물산 LTIR
+  Step 4: Aggregator (A2A) → 비교 분석
+  ↓ (Early termination: >800 chars)
+User: "삼성물산 0.15, GS건설 0.18. 삼성물산이 우수합니다."
+
+(15-20 seconds, 8-10 tool calls, early termination)
+```
+
+#### Flow 3: Report Generation
+```
+1. User: "삼성물산 지속가능성 공시 의무는?"
+   → Supervisor → call_esg_agent → 답변
+
+2. User: "보고서 만들어줘"
+   → Supervisor (conversation history 전달)
+   ↓
+   create_detailed_report(
+       topic="지속가능성 공시 의무",
+       previous_analysis="이전 답변 전체"
+   )
+   ↓
+   Report Agent (Haiku 4.5):
+     • Evaluate: 이전 답변 충분한가?
+     • Yes → generate_detailed_report (3 stages)
+     • No → get_additional_esg_data → generate (3 stages)
+   ↓
+   Stage 1: Executive Summary (5s)
+   Stage 2: Detailed Analysis (8s)
+   Stage 3: Conclusions (5s)
+   ↓
+   HTML + PDF 생성
+   ↓
+   User: reports/esg_report_지속가능성_공시_의무_20251122_140530.html/pdf
+
+(15-20 seconds total, no timeout)
+```
+
+---
+
+## Model Context Protocol (MCP) Integration
+
+### MCP Server 1: Bedrock Knowledge Base
+
+**Location**: `src/tools/bedrock_kb_tool.py`
+
+**Tool**: `get_esg_knowledge(query: str, num_results: int = 10)`
+
+**Configuration:**
+- KB ID: `HGDLU1PVQE`
+- Search Type: HYBRID (keyword + semantic)
+- Region: us-west-2
+- Profile: profile2
+
+**Data Source**: Samsung C&T 2025 Sustainability Report
+- 124 pages
+- 571KB Markdown
+- 35 extracted images
+- OCR with Claude Sonnet 4.5 (450 DPI, 95%+ accuracy)
+
+**Usage:**
+```python
+from src.tools import get_esg_knowledge
+
+result = get_esg_knowledge(
+    query="Samsung C&T carbon emissions 2024",
+    num_results=10
+)
+```
+
+### MCP Server 2: DuckDuckGo Search
+
+**Location**: `src/tools/search_tools.py`
+
+**Tools:**
+- `web_search(query: str, max_results: int = 10)`
+- `news_search(query: str, max_results: int = 10)`
+
+**Configuration:**
+- Region: kr-kr (Korea)
+- Free tier (no API key)
+- Rate limiting: Built-in
+
+**Usage:**
+```python
+from src.tools import web_search, news_search
+
+web_result = web_search("GS E&C ESG report 2024")
+news_result = news_search("ESG regulations Korea")
+```
+
+### MCP Server 3: HTML2PDF
+
+**Location**: `mcp/html2pdf/` (Node.js TypeScript)
+
+**Backend**: Puppeteer (headless Chrome)
+
+**Integration**: Python subprocess → Node.js script (.mjs)
+
+**Configuration:**
+- Scale: 80%
+- Format: A4
+- Margins: 15mm
+- Background: Printed
+
+**Called by**: Report generation flow (automatic)
+
+---
+
+## Intelligent Report Generation
+
+### Report Agent Features
+
+#### 1. Adaptive Data Collection
+
+**Scenario A: Sufficient Data**
+```
+Previous answer has comprehensive data
+  ↓
+Report Agent: Evaluate → Sufficient
+  ↓
+Generate report immediately (3 stages)
+```
+
+**Scenario B: Insufficient Data**
+```
+Previous answer is brief or incomplete
+  ↓
+Report Agent: Evaluate → Insufficient
+  ↓
+Identify missing data:
+  - Samsung C&T data? → get_additional_esg_data
+  - External company? → get_additional_research_data
+  ↓
+Generate report with complete data (3 stages)
+```
+
+**Scenario C: Clarification Needed**
+```
+Critical info cannot be obtained from KB or Web
+  ↓
+Report Agent: Return "CLARIFICATION_NEEDED:\n1. [question]"
+  ↓
+CLI: Ask user
+  ↓
+User answers → Report Agent re-called
+  ↓
+Generate report (3 stages)
+```
+
+#### 2. 3-Stage Generation (Timeout Prevention)
+
+**Problem**: Single API call for long HTML (8000 tokens) → Read timeout
+
+**Solution**: Split into 3 separate calls
+
+```python
+# Stage 1: Executive Summary
+prompt_1 = "Generate ONLY Executive Summary (2-3 paragraphs)"
+section_1 = report_agent(prompt_1)  # ~300 tokens, 5s
+
+# Stage 2: Detailed Analysis
+prompt_2 = "Generate ONLY Detailed Analysis (with tables)"
+section_2 = report_agent(prompt_2)  # ~1500 tokens, 8s
+
+# Stage 3: Conclusions
+prompt_3 = "Generate ONLY Conclusions and Recommendations"
+section_3 = report_agent(prompt_3)  # ~500 tokens, 5s
+
+# Combine
+html_content = section_1 + section_2 + section_3
+```
+
+**Benefits:**
+- No timeout (each call < 10s)
+- More stable (smaller outputs)
+- Better structured (explicit sections)
+
+#### 3. Markdown Fallback
+
+**Safety mechanism** if Report Agent outputs Markdown instead of HTML:
+
+```python
+def _is_markdown(content: str) -> bool:
+    """Detect Markdown syntax (##, **, -, etc.)"""
+
+if _is_markdown(content):
+    html_content = markdown.markdown(
+        content,
+        extensions=['tables', 'fenced_code', 'nl2br']
+    )
+```
+
+---
+
+## Planner-Executor Pattern
+
+### When Used
+
+- **Complex questions** requiring multi-step reasoning
+- **Multi-company comparisons**
+- **Industry benchmarking**
+- Questions that cannot be answered by single agent call
+
+### Execution Flow
+
+```
+Complex Question
+    ↓
+Planner Agent (Sonnet 4.5)
+    ↓ JSON ExecutionPlan
+{
+  "complexity": "medium",
+  "steps": [
+    {"step_id": 1, "step_type": "kb_query", "action": "..."},
+    {"step_id": 2, "step_type": "web_search", "action": "..."},
+    {"step_id": 3, "step_type": "aggregate", "dependencies": [1,2]}
+  ]
+}
+    ↓
+Executor (Sequential)
+    ├─ Step 1: ESG Agent (A2A) → KB query
+    ├─ Step 2: Research Agent (A2A) → Web search
+    └─ Step 3: Aggregator Agent (A2A) → Compare
+         ↓ Check early termination
+         ✓ Output >800 chars, remaining are searches
+         → STOP (save time & cost)
+    ↓
+Final Answer (Concise, 4-6 sentences)
+```
+
+### Pydantic Models
 
 ```python
 from pydantic import BaseModel, Field
@@ -153,6 +620,7 @@ from enum import Enum
 class StepType(str, Enum):
     REASONING = "reasoning"
     WEB_SEARCH = "web_search"
+    NEWS_SEARCH = "news_search"
     KB_QUERY = "kb_query"
     AGGREGATE = "aggregate"
     COMPARE = "compare"
@@ -173,1057 +641,280 @@ class ExecutionPlan(BaseModel):
     expected_final_output: str
 ```
 
-**Performance Impact:**
-- Handles N-company comparisons dynamically
-- Reduces redundant searches through smart planning
-- Cost-efficient with early termination (30-50% time savings on some queries)
+---
 
-### 2. Agent-to-Agent (A2A) Communication
+## Clarification Loop
 
-**Challenge:** Traditional tool calling limits agent collaboration and specialization.
+### Multi-Level Clarification
 
-**Solution:** Agents wrapped as tools for seamless delegation.
+**Available at:**
+1. **Supervisor Level** - Unclear questions ("주요 건설사" = which companies?)
+2. **Report Agent Level** - Missing critical data for report
+3. **Any Agent** - Can return CLARIFICATION_NEEDED
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Supervisor as Supervisor Agent
-    participant ESG as ESG Agent
-    participant Research as Research Agent
-    participant Aggregator as Aggregator Agent
-    participant KB as Bedrock KB
-    participant Web as DuckDuckGo
+### Implementation
 
-    User->>Supervisor: "Compare Samsung C&T LTIR with GS E&C"
-    Supervisor->>Supervisor: Analyze query complexity
-    Supervisor->>Supervisor: Route to Planner-Executor
-
-    Note over Supervisor: Create execution plan
-
-    Supervisor->>Research: A2A: Get GS E&C LTIR
-    Research->>Web: web_search("GS E&C LTIR 2024")
-    Web-->>Research: Search results
-    Research-->>Supervisor: "GS E&C LTIR: 0.18"
-
-    Supervisor->>ESG: A2A: Get Samsung C&T LTIR
-    ESG->>KB: get_esg_knowledge("Samsung C&T LTIR")
-    KB-->>ESG: KB retrieval results
-    ESG-->>Supervisor: "Samsung C&T LTIR: 0.15"
-
-    Supervisor->>Aggregator: A2A: Compare data
-    Aggregator-->>Supervisor: Comparative analysis
-
-    Supervisor->>User: Concise summary (3-5 sentences)
+**Agent returns:**
+```
+"CLARIFICATION_NEEDED:
+1. 어떤 건설사들을 비교하고 싶으신가요?
+2. 어떤 연도 데이터를 원하시나요?"
 ```
 
-**Agent-as-Tool Pattern:**
-
+**CLI handles:**
 ```python
-from strands import Agent, tool
-
-# Specialized agents
-esg_agent = Agent(
-    model="global.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    tools=[get_esg_knowledge],
-    system_prompt="You are a Samsung C&T ESG specialist..."
-)
-
-research_agent = Agent(
-    model="global.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    tools=[web_search, news_search],
-    system_prompt="You are a web research specialist..."
-)
-
-# Wrap agents as tools for A2A communication
-@tool
-def call_esg_agent(query: str) -> str:
-    """Call ESG specialist agent for Samsung C&T questions."""
-    response = esg_agent(query)
-    return str(response)
-
-@tool
-def call_research_agent(query: str) -> str:
-    """Call research specialist agent for external information."""
-    response = research_agent(query)
-    return str(response)
-
-# Supervisor orchestrates via A2A tools
-supervisor = Agent(
-    model="global.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    tools=[call_esg_agent, call_research_agent, create_and_execute_plan],
-    system_prompt="You are an intelligent orchestrator..."
-)
+if response.startswith("CLARIFICATION_NEEDED:"):
+    questions = parse_questions(response)
+    for q in questions:
+        answer = ask_user(q)
+    enhanced_query = enhance_with_answers(original, answers)
+    response = agent(enhanced_query)  # Retry with clarification
 ```
 
-**Benefits:**
-- **Specialization:** Each agent focuses on specific domain
-- **Composability:** Easy to add new specialist agents
-- **Delegation:** Supervisor routes without domain knowledge
-- **Testability:** Each agent tested independently
+### Clarification Strategy (Lenient)
 
-### 3. Smart Clarification Loop
+**Make reasonable assumptions:**
+- "주요 회사" → Top 3-5 by market cap
+- "최근" → Last year (2023-2024)
+- "어느 정도" → Compare with industry average
 
-**Challenge:** Vague queries ("How do major companies compare?") lead to irrelevant results.
+**Only ask when:**
+- Critical information missing
+- Multiple valid interpretations
+- Cannot proceed without input
 
-**Traditional Approach:** Ask 5-10 clarification questions (annoying).
-
-**Our Approach:** Make reasonable assumptions, ask only critical questions.
-
-**Lenient Strategy:**
-- "주요 회사" (major companies) → Assume top 3-5 by market cap
-- "최근" (recent) → Assume last year (2023-2024)
-- "어느 정도" (how much) → Compare with industry average
-
-**Only Ask When:**
-- Critical information missing (which specific companies?)
-- Ambiguity prevents meaningful answer
-- Multiple valid interpretations exist
-
-**Max Rounds:** 3 clarifications to prevent frustration
-
-**Implementation:**
-
-```python
-# Supervisor detects unclear query and returns special format
-if needs_clarification(query):
-    return "CLARIFICATION_NEEDED:\n1. Which construction companies to compare?\n   Example: Samsung C&T, GS E&C, Hyundai E&C"
-
-# CLI handles clarification loop
-clarification_count = 0
-current_question = original_question
-
-while clarification_count < 3:
-    response = supervisor_agent(current_question)
-
-    if response.startswith("CLARIFICATION_NEEDED:"):
-        # Extract questions
-        questions = parse_clarification_questions(response)
-        # Ask user
-        user_answers = ask_user(questions)
-        # Enhance query with context
-        current_question = enhance_query(original_question, user_answers)
-        clarification_count += 1
-    else:
-        return response  # Clear answer
-```
-
-**Performance Impact:**
-- User friction: 5-10 questions → 1-2 questions
-- Completion rate: +40% (fewer abandoned queries)
-- User satisfaction: Significantly improved
-
-### 4. Early Termination Optimization
-
-**Challenge:** Complex plans may include redundant steps after answer is sufficient.
-
-**Solution:** Monitor output quality and terminate when complete.
-
-**Termination Conditions:**
-1. After `AGGREGATE` or `COMPARE` step (answer likely complete)
-2. Output length >800 characters (substantial data collected)
-3. Remaining steps are only searches (diminishing returns)
-
-**Cost Savings:**
-- Average: 30-50% reduction in execution time for some queries
-- Fewer API calls to Bedrock and DuckDuckGo
-- Better user experience (faster responses)
-
-### 5. Efficiency Guidelines in All Agents
-
-**Problem (Before):** Research agent made 60 tool calls for single company search.
-
-**Solution:** Explicit efficiency instructions in system prompts.
-
-**Research Agent Efficiency Guidelines:**
-
-```
-Core Principles:
-1. EFFICIENCY FIRST - Use minimal searches
-2. ONE SEARCH PER TARGET - Combine search terms
-3. AVOID REDUNDANCY - Don't repeat similar searches
-4. Stop when key information found
-
-Research Strategy:
-- Combine terms: "GS E&C LTIR safety performance 2024"
-- 1-2 searches per company max
-- Use news_search only if web insufficient
-```
-
-**Results:**
-- Tool calls: 60 → 5-10 (6x reduction)
-- Response time: 60-90s → 15-30s (2-3x faster)
-- Cost per query: -70% savings
+**Max rounds**: 3 (prevent user frustration)
 
 ---
 
-## Agent Architecture
+## Usage Examples
 
-### Agent Hierarchy
+### Example 1: Simple Question
 
-```mermaid
-graph TD
-    Supervisor[Supervisor Agent V2<br/>Orchestrator + Clarification Loop<br/>Claude Sonnet 4.5]
+```
+You: 삼성물산의 탄소배출량은?
 
-    Supervisor --> |Tool 1| ESG[ESG Agent<br/>Samsung C&T Specialist<br/>Claude Sonnet 4.5]
-    Supervisor --> |Tool 2| Research[Research Agent<br/>Web Search Specialist<br/>Claude Sonnet 4.5]
-    Supervisor --> |Tool 3| PlanExec[Planner + Executor<br/>Dynamic Multi-Step<br/>Claude Sonnet 4.5]
-    Supervisor --> |Tool 4| Report[Report Agent<br/>HTML/PDF Generator<br/>Claude Sonnet 4.5]
+Bot: 삼성물산의 2024년 탄소배출량은 543만 톤CO2e이며,
+2030년까지 30% 감축을 목표로 합니다.
+재생에너지 전환과 에너지 효율화를 통해 달성할 예정입니다.
 
-    ESG --> KB_Tool[MCP Tool:<br/>get_esg_knowledge]
-    Research --> Search_Tools[MCP Tools:<br/>web_search<br/>news_search]
-    Report --> Report_Tool[MCP Tool:<br/>generate_detailed_report]
-
-    PlanExec --> Planner[Planner Agent]
-    Planner --> Executor[Executor]
-
-    Executor --> |Routes to| ESG
-    Executor --> |Routes to| Research
-    Executor --> |Routes to| Aggregator[Aggregator Agent<br/>Data Synthesizer<br/>Claude Sonnet 4.5]
-
-    KB_Tool --> BedrockKB[(AWS Bedrock<br/>Knowledge Base<br/>HGDLU1PVQE)]
-    Search_Tools --> DuckDuckGo[(DuckDuckGo<br/>Web + News API)]
-    Report_Tool --> HTML2PDF[Node.js<br/>Puppeteer<br/>HTML→PDF]
-
-    style Supervisor fill:#FF6B6B,stroke:#C92A2A,stroke-width:3px,color:#fff
-    style PlanExec fill:#4ECDC4,stroke:#087F5B,stroke-width:2px,color:#fff
-    style Planner fill:#4ECDC4,stroke:#087F5B,stroke-width:2px,color:#fff
-    style Executor fill:#4ECDC4,stroke:#087F5B,stroke-width:2px,color:#fff
-    style ESG fill:#95E1D3,stroke:#0CA678,stroke-width:2px
-    style Research fill:#95E1D3,stroke:#0CA678,stroke-width:2px
-    style Aggregator fill:#95E1D3,stroke:#0CA678,stroke-width:2px
-    style Report fill:#95E1D3,stroke:#0CA678,stroke-width:2px
-    style KB_Tool fill:#FFE66D,stroke:#F59F00,stroke-width:2px
-    style Search_Tools fill:#FFE66D,stroke:#F59F00,stroke-width:2px
-    style Report_Tool fill:#FFE66D,stroke:#F59F00,stroke-width:2px
+(3-5 seconds, 2 tool calls: call_esg_agent → get_esg_knowledge)
 ```
 
-### Agent Specifications
+### Example 2: Complex Comparison
 
-#### 1. Supervisor Agent V2 (Orchestrator)
+```
+You: 삼성물산 LTIR과 GS건설, 현대건설 LTIR 비교해줘
 
-**Model:** `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
+Bot: [Planning with Planner-Executor...]
 
-**Role:** Intelligent orchestrator with routing, clarification, and delegation.
+삼성물산의 LTIR은 0.15로 업계 평균 0.20보다 우수합니다.
+GS건설은 0.18, 현대건설은 0.22를 기록했습니다.
+삼성물산이 3개사 중 가장 낮은 재해율을 보이며 업계 최고 수준입니다.
 
-**Capabilities:**
-- Question classification (simple/complex/report)
-- Clarification loop (max 3 rounds, lenient assumptions)
-- Agent routing via 4 A2A tools
-- Direct answers for greetings and simple questions
+더 상세한 분석이 필요하시면 '보고서 만들어줘'라고 요청해주세요.
 
-**A2A Tools:**
-1. `call_esg_agent` - Samsung C&T ESG questions
-2. `call_research_agent` - External company/industry questions
-3. `create_and_execute_plan` - Complex multi-step reasoning
-4. `generate_report_for_analysis` - Detailed HTML/PDF reports
-
-**Routing Logic:**
-- Greeting/chitchat → Direct response
-- Single company ESG → Delegate to ESG Agent
-- External company → Delegate to Research Agent
-- Multi-company comparison → Planner-Executor
-- "보고서" (report) keyword → Report Agent
-
-**File:** `src/agents/supervisor_agent_v2.py`
-
-#### 2. Planner Agent
-
-**Model:** `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
-
-**Role:** Create structured execution plans for complex questions.
-
-**Output:** JSON `ExecutionPlan` with:
-- Question analysis
-- Complexity assessment (simple/medium/complex)
-- Structured steps with dependencies
-- Expected outputs
-
-**Adaptive Step Limits:**
-- Simple: MAX 5 steps
-- Medium: MAX 10 steps
-- Complex: MAX 15 steps
-
-**Step Types Supported:**
-- `reasoning` - LLM analysis
-- `web_search` - General web search
-- `news_search` - News article search
-- `kb_query` - Samsung C&T KB retrieval
-- `aggregate` - Data collection
-- `compare` - Comparative analysis
-
-**File:** `src/agents/planner_agent.py`
-
-#### 3. Executor
-
-**Model:** Python orchestrator (not an agent itself)
-
-**Role:** Execute plans step-by-step with dependency management.
-
-**Capabilities:**
-- Sequential execution respecting dependencies
-- Agent routing based on step type
-- Early termination detection
-- Result aggregation
-
-**Early Termination Logic:**
-```python
-if step.step_type in [StepType.AGGREGATE, StepType.COMPARE]:
-    if output_length > 800 and remaining_steps_are_searches:
-        logger.info("Early termination: sufficient data collected")
-        return result
+(15-20 seconds, 8-10 tool calls with early termination)
 ```
 
-**File:** `src/agents/executor_agent.py`
+### Example 3: Report Generation (Sufficient Data)
 
-#### 4. ESG Agent (Specialist)
+```
+You: 삼성물산 산림벌채 리스크는?
 
-**Model:** `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
+Bot: [상세 답변 with KB data...]
 
-**Role:** Samsung C&T ESG knowledge expert.
+You: 보고서 만들어줘
 
-**Data Source:**
-- AWS Bedrock Knowledge Base (HGDLU1PVQE)
-- Samsung C&T 2025 Sustainability Report
-- 124 pages, 571KB Markdown, 35 images
+Bot: [Generating report in 3 stages...]
+Stage 1/3: Executive Summary... ✓
+Stage 2/3: Detailed Analysis... ✓
+Stage 3/3: Conclusions... ✓
+Converting HTML to PDF...
+PDF conversion completed!
 
-**MCP Tool:** `get_esg_knowledge` (hybrid search, 10 results)
+보고서 파일:
+- HTML: reports/esg_report_산림벌채_리스크_20251122_140530.html
+- PDF: reports/esg_report_산림벌채_리스크_20251122_140530.pdf
 
-**Answer Style:**
-- Concise (3-5 sentences)
-- Cite key metrics
-- Focus on direct answers
-
-**Efficiency Guidelines:**
-- Call KB tool ONCE per query
-- Extract only relevant information
-- Avoid verbose explanations
-
-**File:** `src/agents/esg_agent.py`
-
-#### 5. Research Agent (Specialist)
-
-**Model:** `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
-
-**Role:** External ESG information and competitor research.
-
-**MCP Tools:**
-- `web_search` - DuckDuckGo web search
-- `news_search` - DuckDuckGo news search
-
-**Efficiency Guidelines:**
-- 1-2 searches per company MAX
-- Combine search terms: "Company X LTIR safety 2024"
-- Avoid redundant similar searches
-- Stop when key information found
-
-**Special Function:**
-```python
-def research_multiple_companies(
-    companies: List[str],
-    topic: str,
-    max_results_per_company: int = 5
-) -> Dict[str, Any]:
-    """Research multiple companies in a loop."""
-    # Dynamic N-company search
+(15-18 seconds, no data re-collection)
 ```
 
-**File:** `src/agents/research_agent.py`
+### Example 4: Report with Data Collection
 
-#### 6. Aggregator Agent (Specialist)
+```
+You: 산림벌채 리스크 보고서 만들어줘
 
-**Model:** `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
+Bot: [Report Agent evaluating...]
+[Collecting additional KB data...]
+[Generating report in 3 stages...]
 
-**Role:** Data synthesis and comparative analysis.
+보고서 파일:
+- HTML: reports/esg_report_산림벌채_리스크_20251122_140600.html
+- PDF: reports/esg_report_산림벌채_리스크_20251122_140600.pdf
 
-**Capabilities:**
-- Collect data from multiple sources
-- Normalize metrics for comparison
-- Generate insights and summaries
-- Handle missing data gracefully
-
-**Answer Style:**
-- Brief comparison (4-6 sentences for chat)
-- Highlight key differences
-- Provide actionable takeaways
-- Suggest detailed report if needed
-
-**No Tools:** Pure data processing agent
-
-**File:** `src/agents/aggregator_agent.py`
-
-#### 7. Report Agent (Specialist)
-
-**Model:** `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
-
-**Role:** Comprehensive HTML/PDF report generation.
-
-**MCP Tool:** `generate_detailed_report` (HTML + auto PDF conversion)
-
-**Report Structure:**
-- Executive Summary (2-3 paragraphs)
-- Detailed Analysis (main findings)
-- Comparative Metrics (tables)
-- Key Insights (bullet points)
-- Conclusions (summary + recommendations)
-
-**Output:**
-- Professional HTML with CSS styling
-- Auto-converted to PDF (scale 80%, A4 format)
-- Saved to `reports/` directory
-- KST timestamps
-- Blue/green professional theme
-
-**File:** `src/agents/report_agent.py`
-
----
-
-## Model Context Protocol (MCP) Integration
-
-### MCP Architecture
-
-```mermaid
-flowchart TD
-    subgraph Agents["Strands Agents Layer"]
-        ESG[ESG Agent]
-        Research[Research Agent]
-        Report[Report Agent]
-    end
-
-    subgraph MCP["MCP Tool Layer"]
-        KB_Tool["@tool<br/>get_esg_knowledge<br/>(Python)"]
-        Web_Tool["@tool<br/>web_search<br/>(Python)"]
-        News_Tool["@tool<br/>news_search<br/>(Python)"]
-        PDF_Tool["@tool<br/>generate_detailed_report<br/>(Python + Node.js)"]
-    end
-
-    subgraph Backends["Backend Services"]
-        BedrockKB["Amazon Bedrock<br/>Knowledge Base<br/>Hybrid Search"]
-        DuckDuckGo["DuckDuckGo API<br/>Web + News Search<br/>Region: kr-kr"]
-        Puppeteer["Node.js Puppeteer<br/>HTML → PDF<br/>Scale 80%, A4"]
-    end
-
-    ESG --> KB_Tool
-    Research --> Web_Tool
-    Research --> News_Tool
-    Report --> PDF_Tool
-
-    KB_Tool --> BedrockKB
-    Web_Tool --> DuckDuckGo
-    News_Tool --> DuckDuckGo
-    PDF_Tool --> Puppeteer
-
-    style Agents fill:#95E1D3,stroke:#0CA678,stroke-width:2px
-    style MCP fill:#FFE66D,stroke:#F59F00,stroke-width:2px
-    style Backends fill:#A8DADC,stroke:#1864AB,stroke-width:2px
+(20-25 seconds, includes data collection + 3-stage generation)
 ```
 
-### MCP Server Implementations
+### Example 5: Clarification Loop
 
-#### 1. Bedrock Knowledge Base MCP
-
-**File:** `src/tools/bedrock_kb_tool.py`
-
-**Implementation:**
-
-```python
-from strands import tool
-import boto3
-
-class BedrockKBRetriever:
-    def __init__(self, kb_id: str, region: str = "us-west-2"):
-        self.kb_id = kb_id
-        self.client = boto3.Session(profile_name="profile2").client(
-            "bedrock-agent-runtime",
-            region_name=region
-        )
-
-    def retrieve(self, query: str, num_results: int = 10) -> List[Dict]:
-        response = self.client.retrieve(
-            knowledgeBaseId=self.kb_id,
-            retrievalQuery={"text": query},
-            retrievalConfiguration={
-                "vectorSearchConfiguration": {
-                    "numberOfResults": num_results,
-                    "overrideSearchType": "HYBRID"  # Keyword + Semantic
-                }
-            }
-        )
-        return response["retrievalResults"]
-
-@tool
-def get_esg_knowledge(query: str, num_results: int = 10) -> str:
-    """
-    Retrieve ESG knowledge from Samsung C&T Sustainability Report.
-
-    Uses AWS Bedrock Knowledge Base with hybrid search (keyword + semantic).
-    Returns formatted results with citations and relevance scores.
-
-    Args:
-        query: Search query about Samsung C&T ESG practices
-        num_results: Number of results to return (default: 10)
-
-    Returns:
-        Formatted search results with content and metadata
-    """
-    retriever = BedrockKBRetriever(kb_id="HGDLU1PVQE")
-    results = retriever.retrieve(query, num_results)
-
-    # Format results with content and metadata
-    formatted = []
-    for i, result in enumerate(results, 1):
-        content = result["content"]["text"]
-        score = result.get("score", 0)
-        formatted.append(f"[Result {i}] (Score: {score:.3f})\n{content}\n")
-
-    return "\n".join(formatted)
 ```
+You: 주요 건설사들의 안전 성과는?
 
-**Configuration:**
-- KB ID: `HGDLU1PVQE` <-- Need to replace YOUR KB_ID
-- Region: `us-west-2`
-- Profile: `profile2`
-- Search Type: `HYBRID` (combines keyword and semantic search)
-- Results: 10 per query
-- Scoring: Relevance scores returned
+Bot: 어떤 건설사들을 비교하고 싶으신가요?
+(예: 삼성물산, 현대건설, GS건설, 대림산업)
 
-#### 2. DuckDuckGo Search MCP
+You: 삼성물산, GS건설, 현대건설
 
-**File:** `src/tools/search_tools.py`
+Bot: [Processing with clarification...]
+[Returns comparison results]
 
-**Implementation:**
-
-```python
-from strands import tool
-from duckduckgo_search import DDGS
-
-@tool
-def web_search(query: str, max_results: int = 10) -> str:
-    """
-    Search the web using DuckDuckGo.
-
-    Returns recent web pages relevant to the query.
-    Optimized for Korean market (region=kr-kr).
-
-    Args:
-        query: Search query
-        max_results: Maximum number of results (default: 10)
-
-    Returns:
-        Formatted search results with titles, links, and snippets
-    """
-    ddgs = DDGS()
-    results = ddgs.text(query, region="kr-kr", max_results=max_results)
-
-    formatted = []
-    for i, result in enumerate(results, 1):
-        title = result.get("title", "")
-        link = result.get("link", "")
-        snippet = result.get("body", "")
-        formatted.append(f"[{i}] {title}\nURL: {link}\n{snippet}\n")
-
-    return "\n".join(formatted)
-
-@tool
-def news_search(query: str, max_results: int = 10) -> str:
-    """
-    Search news articles using DuckDuckGo News.
-
-    Returns recent news articles relevant to the query.
-    Useful for current events and industry updates.
-
-    Args:
-        query: Search query
-        max_results: Maximum number of results (default: 10)
-
-    Returns:
-        Formatted news results with titles, sources, and publication dates
-    """
-    ddgs = DDGS()
-    results = ddgs.news(query, region="kr-kr", max_results=max_results)
-
-    formatted = []
-    for i, result in enumerate(results, 1):
-        title = result.get("title", "")
-        source = result.get("source", "")
-        date = result.get("date", "")
-        link = result.get("link", "")
-        formatted.append(f"[{i}] {title}\nSource: {source} | Date: {date}\nURL: {link}\n")
-
-    return "\n".join(formatted)
-```
-
-**Configuration:**
-- Region: `kr-kr` (Korea)
-- Rate limiting: Built-in by library
-- Results: Up to 10 per query
-- Free tier: No API key required
-
-#### 3. HTML2PDF MCP
-
-**Location:** `mcp/html2pdf/` (Node.js TypeScript project)
-
-**Backend:** Node.js Puppeteer
-
-**Integration:** Python subprocess call
-
-**Python Wrapper:** `src/tools/report_tools.py`
-
-```python
-import subprocess
-import json
-
-def convert_html_to_pdf(
-    html_path: str,
-    output_path: str,
-    scale: float = 0.8
-) -> Dict[str, Any]:
-    """
-    Convert HTML to PDF using Node.js Puppeteer MCP server.
-
-    Creates a temporary CommonJS script and executes via Node.js.
-
-    Args:
-        html_path: Path to HTML file
-        output_path: Path for output PDF
-        scale: PDF scale factor (default: 0.8 = 80%)
-
-    Returns:
-        Conversion result with success status and paths
-    """
-    # Create temporary .cjs script
-    script_content = f'''
-const {{ PdfConverter }} = require('./mcp/html2pdf/dist/pdf-converter.js');
-
-async function convert() {{
-    const converter = new PdfConverter();
-    const result = await converter.convertToPdf({{
-        htmlPath: "{html_path}",
-        outputPath: "{output_path}",
-        scale: {scale},
-        printBackground: true,
-        format: "A4",
-        marginTop: "15mm"
-    }});
-    console.log(JSON.stringify(result));
-}}
-
-convert().catch(console.error);
-'''
-
-    # Write and execute
-    with open("temp_convert.cjs", "w") as f:
-        f.write(script_content)
-
-    result = subprocess.run(
-        ["node", "temp_convert.cjs"],
-        capture_output=True,
-        text=True,
-        timeout=30
-    )
-
-    if result.returncode == 0:
-        return json.loads(result.stdout)
-    else:
-        raise Exception(f"PDF conversion failed: {result.stderr}")
-```
-
-**Configuration:**
-- Scale: 80% (default, configurable)
-- Format: A4
-- Margins: 15mm top, 10mm others
-- Background: Printed (CSS backgrounds included)
-- Processing time: 1.5-3 seconds per report
-
-**Node.js Build:**
-
-```bash
-cd mcp/html2pdf
-npm install
-npm run build  # TypeScript → JavaScript (dist/)
-```
-
-### MCP vs Traditional Tool Integration
-
-**Traditional Approach (e.g., LangChain):**
-- Tight coupling between agents and tools
-- Framework-specific abstractions
-- Difficult to swap implementations
-- Limited reusability
-
-**MCP Approach:**
-- Standardized tool protocol
-- Framework-agnostic (works with any MCP-compatible system)
-- Easy to swap backends (e.g., Bedrock KB → custom vector DB)
-- Tools can be shared across projects
-
-**Example: Swapping Bedrock KB for ChromaDB**
-
-```python
-# Original: Bedrock KB
-@tool
-def get_esg_knowledge(query: str) -> str:
-    retriever = BedrockKBRetriever(kb_id="HGDLU1PVQE")
-    return retriever.retrieve(query)
-
-# Swap to ChromaDB: Only change implementation, not interface
-@tool
-def get_esg_knowledge(query: str) -> str:
-    retriever = ChromaDBRetriever(collection="samsung_esg")
-    return retriever.retrieve(query)
-
-# Agents unchanged - MCP abstraction preserved
+(2-3 clarification rounds max)
 ```
 
 ---
 
-## Performance & Efficiency
+## Project Structure
 
-### Response Time Benchmarks
-
-| Query Type | Example | Tool Calls | Time | Cost |
-|-----------|---------|------------|------|------|
-| **Simple** | "삼성물산의 탄소배출량은?" | 1-2 | 3-5s | $0.01 |
-| **Medium** | "삼성물산과 GS건설 LTIR 비교" | 3-5 | 10-15s | $0.03 |
-| **Complex** | "Top 3 건설사 안전성과 종합 분석" | 5-10 | 15-30s | $0.05 |
-| **Report** | "상세 보고서 생성" | 10-15 | 30-45s | $0.08 |
-
-### Performance Optimization Techniques
-
-1. **Prompt Engineering:**
-   - Explicit efficiency guidelines in all agent prompts
-   - "Use minimal searches", "Combine terms", "Stop when found"
-
-2. **Adaptive Complexity:**
-   - Simple queries: 5 steps max → Fast completion
-   - Complex queries: 15 steps max → Prevent runaway execution
-
-3. **Early Termination:**
-   - Monitor output quality at each step
-   - Terminate when sufficient data (>800 chars + comparison complete)
-
-4. **Concise Output:**
-   - Chat responses: 3-5 sentences
-   - Reports: Comprehensive but structured
-   - Suggest reports for deep dives
-
-5. **Tool Call Minimization:**
-   - Research Agent: 1-2 searches per company
-   - ESG Agent: Single KB call per query
-   - No redundant similar queries
+```
+sct-esg/
+├── src/
+│   ├── agents/                    # Strands Agents
+│   │   ├── supervisor_agent_v2.py # Orchestrator (Sonnet 4.5)
+│   │   ├── planner_agent.py       # Plan creator (Sonnet 4.5)
+│   │   ├── executor_agent.py      # Plan executor
+│   │   ├── esg_agent.py           # Samsung C&T specialist (Sonnet 4.5)
+│   │   ├── research_agent.py      # Web search specialist (Sonnet 4.5)
+│   │   ├── aggregator_agent.py    # Data synthesizer (Sonnet 4.5)
+│   │   ├── report_agent.py        # Report generator (Haiku 4.5)
+│   │   └── plan_models.py         # Pydantic schemas
+│   │
+│   ├── tools/                     # MCP Tools
+│   │   ├── bedrock_kb_tool.py     # KB retrieval
+│   │   ├── search_tools.py        # DuckDuckGo search
+│   │   └── report_tools.py        # HTML/PDF generation
+│   │
+│   ├── config.py                  # AWS configuration
+│   ├── bedrock_client.py          # Bedrock API wrapper
+│   ├── pdf_to_markdown.py         # PDF → Markdown converter
+│   ├── image_extractor.py         # PDF image extraction
+│   └── chatbot_cli.py             # CLI interface
+│
+├── mcp/                           # MCP Servers
+│   └── html2pdf/                  # Node.js Puppeteer
+│       ├── src/
+│       ├── dist/
+│       └── package.json
+│
+├── tests/                         # Unit tests
+│   ├── test_report_generation.py
+│   └── test_supervisor_agent.py
+│
+├── reports/                       # Generated reports
+├── output/                        # Markdown output
+├── pdf/                           # Source PDFs
+│
+├── requirements.txt               # Python dependencies
+└── README.md                      # This file
+```
 
 ---
 
-## Architecture Evolution: Why Strands Agents?
+## Technology Stack
 
-### The Migration Decision
+### Core Frameworks
+- **Strands Agents SDK** 1.18.0 - Multi-agent orchestration with A2A
+- **AWS Bedrock** - Claude Sonnet 4.5 & Haiku 4.5 inference
+- **Pydantic** 2.12.4 - Structured data validation
+- **Rich** 14.2.0 - Enhanced CLI interface
 
-**Initial Implementation (v1.0):** LangChain + LangGraph
+### AWS Services
+- **Bedrock Runtime** - LLM inference (Claude models)
+- **Bedrock Agent Runtime** - Knowledge Base retrieval
+- **Knowledge Base** HGDLU1PVQE - Samsung C&T ESG documents
 
-**Problems Encountered:**
-- Complex setup: 100+ lines for single agent
-- Tight coupling with LangChain abstractions
-- A2A communication required custom state management
-- Verbose code, steep learning curve
+### MCP Integration
+- **Bedrock KB** - Python @tool decorator
+- **DuckDuckGo** - Python @tool decorator with duckduckgo-search library
+- **HTML2PDF** - Node.js Puppeteer via subprocess
 
-**Solution (v2.0):** Complete rewrite with Strands Agents SDK
+### Models Used
 
-**Benefits Realized:**
-- **Simplicity:** 10-20 lines per agent vs 100+ lines
-- **Native A2A:** Agent-as-tool pattern built-in
-- **MCP Integration:** First-class support for Model Context Protocol
-- **Model Agnostic:** Easy to swap models/providers
-- **Production Ready:** Built-in observability and error handling
-
-### Code Comparison
-
-**LangChain Approach (v1.0):**
-
-```python
-from langchain_aws import ChatBedrock
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain.prompts import ChatPromptTemplate
-from langchain.memory import ConversationBufferMemory
-
-# 100+ lines of setup
-llm = ChatBedrock(
-    model_id="anthropic.claude-sonnet-4-5-20250929-v1:0",
-    model_kwargs={
-        "max_tokens": 8192,
-        "temperature": 0
-    },
-    region_name="us-west-2",
-    credentials_profile_name="profile2"
-)
-
-prompt = ChatPromptTemplate.from_messages([
-    ("system", SYSTEM_PROMPT),
-    ("placeholder", "{chat_history}"),
-    ("human", "{input}"),
-    ("placeholder", "{agent_scratchpad}")
-])
-
-memory = ConversationBufferMemory(
-    memory_key="chat_history",
-    return_messages=True
-)
-
-agent = create_tool_calling_agent(llm, tools, prompt)
-agent_executor = AgentExecutor(
-    agent=agent,
-    tools=tools,
-    memory=memory,
-    verbose=True,
-    handle_parsing_errors=True
-)
-
-# Complex invocation
-response = agent_executor.invoke({"input": query})
-```
-
-**Strands Agents Approach (v2.0):**
-
-```python
-from strands import Agent
-
-# 10-20 lines, clean and simple
-agent = Agent(
-    model="global.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    tools=[get_esg_knowledge],
-    system_prompt=SYSTEM_PROMPT
-)
-
-# Simple invocation
-response = agent(query)
-```
-
-**Lines of Code Reduction:**
-- Agent setup: 100+ → 10-20 lines (5x reduction)
-- A2A communication: 50+ → 10 lines (5x reduction)
-- Total codebase: 2,000+ → 800 lines (2.5x reduction)
-
-### Why Strands Agents Wins
-
-| Feature | LangChain | Strands Agents |
-|---------|-----------|----------------|
-| **Setup Complexity** | High (100+ lines) | Low (10-20 lines) |
-| **A2A Communication** | Manual state management | Built-in agent-as-tool |
-| **MCP Integration** | Via LangChain Tools | Native @tool decorator |
-| **Model Flexibility** | Locked to LangChain providers | Model-agnostic |
-| **Observability** | External (LangSmith) | Built-in tracing |
-| **Learning Curve** | Steep | Gentle |
-| **Code Maintainability** | Complex abstractions | Clean, readable |
-| **Production Readiness** | Requires wrappers | Production-ready out of box |
+| Agent | Model | Reason |
+|-------|-------|--------|
+| Supervisor | Sonnet 4.5 | Complex routing decisions |
+| Planner | Sonnet 4.5 | JSON plan generation |
+| ESG Agent | Sonnet 4.5 | Accurate KB interpretation |
+| Research Agent | Sonnet 4.5 | Web data synthesis |
+| Aggregator | Sonnet 4.5 | Comparative analysis |
+| **Report Agent** | **Haiku 4.5** | **Fast HTML generation, no timeout** |
 
 ---
 
-## Data Source: Samsung C&T Sustainability Report
-
-### Document Overview
-
-**Source:** Samsung C&T Corporation 2025 Sustainability Report (publicly available)
-
-**Specifications:**
-- Pages: 124
-- Original Format: PDF (12.6 MB)
-- Converted Format: Markdown (571 KB)
-- Images: 35 embedded images extracted
-- Language: Korean + English (bilingual)
-- Topics: Environmental, Social, Governance practices
-
-**Content Highlights:**
-- Carbon neutrality roadmap (2050 target)
-- Safety performance (LTIR metrics)
-- Supply chain sustainability
-- Governance structure
-- Stakeholder engagement
-- Risk management
-- Innovation initiatives
-
-### Document Processing Pipeline
-
-**OCR Conversion (Claude Sonnet 4.5 Vision):**
-
-```
-PDF (124 pages)
-    ↓
-[pdf2image] - 450 DPI PNG
-    ↓
-[Bedrock Claude Sonnet 4.5 Vision]
-    ↓
-Markdown + Image Extraction
-    ↓
-Metadata Generation
-    ↓
-Knowledge Base Ingestion
-```
-
-**OCR Configuration:**
-- Model: Claude Sonnet 4.5
-- DPI: 450 (optimal for Korean text)
-- Processing: Page-by-page streaming
-- Accuracy: ~95% for Korean text, ~99% for English
-- Fallback: Claude Haiku 4.5 for timeout pages
-- Success Rate: 100% (124/124 pages)
-
-**Processing Time:**
-- PDF → Images: ~10-15 minutes
-- OCR (Sonnet): ~27 seconds/page
-- Total: ~60-75 minutes for full document
-
-**Image Handling:**
-- Full page images: Saved at 450 DPI (page_NNN.png)
-- Embedded images: Extracted separately (page_NNN_img_YYY.png)
-- Metadata: JSON with descriptions, dimensions, file size
-
-### Knowledge Base Configuration
-
-**AWS Bedrock Knowledge Base:**
-- Region: `us-west-2`
-- Vector Model: Amazon Titan Embeddings v2 - Text
-- Chunk Size: 300 tokens (default)
-- Chunk Overlap: 20% (default)
-- Search Type: Hybrid (keyword + semantic)
-
-**Hybrid Search Benefits:**
-- Keyword search: Exact term matching (e.g., "LTIR", "2024년")
-- Semantic search: Conceptual matching (e.g., "안전 성과" matches safety metrics)
-- Combined ranking: Best of both approaches
-
-**Ingestion Process:**
-
-```bash
-# Upload Markdown to S3
-aws s3 cp output/samsung_ct_2025_sustainability_report_full.md \
-    s3://your-bucket/documents/
-
-# Sync Knowledge Base
-aws bedrock-agent start-ingestion-job \
-    --knowledge-base-id HGDLU1PVQE \
-    --data-source-id YOUR_DATA_SOURCE_ID
-```
-
-**Query Performance:**
-- Retrieval latency: 1-2 seconds
-- Results per query: 10 (configurable)
-- Relevance scoring: 0.0-1.0 (higher = more relevant)
-
----
-
-## Quick Start
+## Installation & Setup
 
 ### Prerequisites
 
-- **Python 3.10+** (required by Strands Agents)
-- **Node.js 20+** (required for HTML2PDF MCP)
-- **AWS Account** with Bedrock access
-- **AWS CLI** configured with profile2
-- **Knowledge Base** access (KB ID: HGDLU1PVQE) <-- Need to replace YOUR KB_ID
+- **Python 3.10+** (Strands Agents requirement, 3.12 recommended)
+- **Node.js 20+** (for PDF conversion)
+- **AWS CLI** configured with profile
+- **Bedrock access** with Claude Sonnet 4.5 & Haiku 4.5
+- **Knowledge Base** HGDLU1PVQE in us-west-2
 
-### Installation
+### Installation Steps
 
 ```bash
-# Clone repository
-git clone https://github.com/jesamkim/agentic-multi-agent.git
-cd agentic-multi-agent
+# 1. Clone repository
+git clone <repository-url>
+cd sct-esg
 
-# Create virtual environment with Python 3.12
+# 2. Create virtual environment
 python3.12 -m venv venv
 source venv/bin/activate
 
-# Install Python dependencies
+# 3. Install Python dependencies
 pip install -r requirements.txt
 
-# Build HTML2PDF MCP server
+# 4. Build HTML2PDF MCP server
 cd mcp/html2pdf
 npm install
 npm run build
 cd ../..
+
+# 5. Configure AWS credentials
+# Edit src/config.py or use AWS_PROFILE environment variable
 ```
 
-### AWS Configuration
+### Configuration
 
-```bash
-# Configure AWS credentials
-aws configure --profile profile2
-# Region: us-west-2
-# Output format: json
+**src/config.py:**
+```python
+# AWS Configuration
+AWS_PROFILE = "profile2"
+AWS_REGION = "us-west-2"
 
-# Verify Bedrock access
-aws bedrock list-foundation-models --region us-west-2 --profile profile2
+# Bedrock Models
+SUPERVISOR_MODEL = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+REPORT_MODEL = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 
-# Verify Knowledge Base access
-aws bedrock-agent get-knowledge-base \
-    --knowledge-base-id HGDLU1PVQE \
-    --region us-west-2 \
-    --profile profile2
+# Knowledge Base
+KB_ID = "HGDLU1PVQE"
+
+# Bedrock Configuration
+MAX_TOKENS = 8192
+TEMPERATURE = 0
 ```
 
 ### Run Chatbot
 
 ```bash
-# Activate virtual environment
 source venv/bin/activate
-
-# Run CLI chatbot
 python src/chatbot_cli.py
-```
-
-### Example Interaction
-
-```
-╔══════════════════════════════════════════════════════════════╗
-║       Samsung C&T ESG Multi-Agent Chatbot System             ║
-║              Powered by Strands Agents + AWS Bedrock         ║
-╚══════════════════════════════════════════════════════════════╝
-
-You: 삼성물산의 2024년 탄소배출량은?
-
-Processing your question...
-
-삼성물산의 2024년 탄소배출량은 543만 톤CO2e입니다.
-전년 대비 3% 감소했으며, 2030년까지 30% 감축을 목표로 합니다.
-재생에너지 전환과 에너지 효율화를 통해 달성할 계획입니다.
-
-Sources: [Retrieved from Samsung C&T Knowledge Base]
-Response time: 4.2 seconds
-
-You: 삼성물산과 GS건설의 LTIR을 비교해줘
-
-Analyzing complex question...
-Creating execution plan... (7 steps)
-Executing plan...
-
-삼성물산의 LTIR은 0.15로 업계 평균 0.20보다 우수합니다.
-GS건설은 0.18을 기록했습니다.
-삼성물산이 더 낮은 재해율을 보이며, 지난 3년간 지속적인 개선 추세입니다.
-
-더 상세한 비교 분석이 필요하시면 '보고서 만들어줘'라고 요청해주세요.
-
-Response time: 18.7 seconds
-
-You: 보고서 만들어줘
-
-Generating detailed report...
-Creating HTML report...
-Converting to PDF (scale 80%)...
-PDF conversion completed!
-
-보고서가 생성되었습니다:
-HTML: reports/esg_report_LTIR_comparison_20251122_143052.html
-PDF: reports/esg_report_LTIR_comparison_20251122_143052.pdf
-
-파일을 확인하시면 상세한 분석 내용을 보실 수 있습니다.
-
-Response time: 12.3 seconds
-
-You: quit
-
-Thank you for using Samsung C&T ESG Chatbot!
 ```
 
 ### CLI Commands
 
-- **Your question** - Ask anything about ESG
+- **Your question** - Ask about ESG topics
 - `help` - Show available commands
 - `history` - View conversation history
 - `clear` - Clear conversation history
@@ -1231,391 +922,313 @@ Thank you for using Samsung C&T ESG Chatbot!
 
 ---
 
+## Key Features Explained
+
+### 1. Conversation History
+
+CLI maintains history and passes to agents:
+
+```python
+# Last 2 exchanges included as context
+context = f"""
+Previous Q: {q1}
+Previous A: {a1}
+
+Previous Q: {q2}
+Previous A: {a2}
+
+Current question: {q3}
+"""
+```
+
+**Benefits:**
+- Report generation reuses previous answers
+- Follow-up questions have context
+- No redundant data collection
+
+### 2. Early Termination
+
+Executor stops when sufficient data collected:
+
+```python
+if step.step_type in [StepType.AGGREGATE, StepType.COMPARE]:
+    if len(output) > 800 and remaining_steps_are_searches:
+        logger.info("Early termination: sufficient data")
+        return result
+```
+
+**Savings**: 30-50% time reduction on some queries
+
+### 3. Adaptive Complexity
+
+Planner adjusts step limits based on complexity:
+
+| Complexity | Max Steps | Example |
+|------------|-----------|---------|
+| Simple | 5 | Single company, single metric |
+| Medium | 10 | 2-3 companies, multiple metrics |
+| Complex | 15 | Multi-company, deep analysis |
+
+### 4. Efficiency Optimizations
+
+**ESG Agent:**
+- Call KB tool ONCE
+- Extract only relevant data
+- Concise by default (3-5 sentences)
+
+**Research Agent:**
+- 1-2 searches per company MAX
+- Combine search terms
+- Stop when key info found
+
+**Report Agent:**
+- Reuse previous answers (preferred)
+- 3-stage generation (timeout prevention)
+- Haiku 4.5 (3x faster than Sonnet)
+
+---
+
 ## Testing
 
-### Test Suite
+### Unit Tests
 
 ```bash
 # Run all tests
-pytest tests/test_strands_agents.py -v
+pytest tests/ -v
 
-# Run specific test class
-pytest tests/test_strands_agents.py::TestTools -v
-
-# Skip slow integration tests (require AWS)
-pytest tests/test_strands_agents.py -v -m "not slow"
-
-# Run with coverage
-pytest tests/test_strands_agents.py --cov=src --cov-report=html
+# Specific test suites
+pytest tests/test_report_generation.py -v
+pytest tests/test_supervisor_agent.py -v
 ```
 
-### Test Coverage
+**Test Coverage:**
+- Markdown detection & conversion (5 tests)
+- HTML report generation (2 tests)
+- Report Agent integration (3 tests)
+- Supervisor routing logic (6 tests)
 
-| Test Category | Tests | Status | Notes |
-|--------------|-------|--------|-------|
-| **Tool Tests** | 4/4 | Passing | KB retrieval, web/news search, report generation |
-| **Agent Tests** | 6/6 | Passing | All 7 agents tested individually |
-| **Factory Tests** | 3/3 | Passing | Agent creation and configuration |
-| **Integration** | 8/8 | Passing | End-to-end workflows (requires AWS) |
-| **Total** | **13/13** | **✓ All Passing** | Mocked AWS calls for unit tests |
-
-### Test Files
-
-- `tests/test_strands_agents.py` - Main test suite
-- Integration tests marked with `@pytest.mark.slow`
-- AWS calls mocked for unit tests
-- Real AWS integration tests require credentials
+**Current Status**: 16/16 tests passing ✓
 
 ---
 
-## Project Structure
+## Cost Analysis
 
+### Per Query Costs
+
+| Query Type | Tool Calls | Tokens (in/out) | Cost (est.) |
+|------------|------------|-----------------|-------------|
+| Simple ESG | 2 | 500 / 200 | ~$0.01 |
+| Complex comparison | 8-10 | 3000 / 500 | ~$0.05 |
+| Report (3-stage) | 3 | 2000 / 2400 | ~$0.03 |
+
+### Monthly Estimates
+
+**1,000 queries/month (mixed usage):**
+- 500 simple: $5
+- 400 complex: $20
+- 100 reports: $3
+- **Total: ~$28/month**
+
+**Cost Optimizations:**
+- Early termination saves 30-50% on some queries
+- Report reuse prevents redundant KB/Web queries
+- Haiku for reports (3x cheaper than Sonnet)
+
+---
+
+## Performance Metrics
+
+### Response Times
+
+| Query Type | Time | Notes |
+|------------|------|-------|
+| Simple ESG | 3-5s | Direct KB query |
+| Complex (2-3 companies) | 15-20s | With early termination |
+| Report (sufficient data) | 15-18s | 3-stage generation |
+| Report (data collection) | 20-25s | Includes additional queries |
+
+### Accuracy
+
+**OCR Quality (PDF → Markdown):**
+- Korean text: ~95% (Claude Sonnet 4.5, 450 DPI)
+- Tables: ~95% (hierarchical structure preserved)
+- Images: 35 extracted with metadata
+
+**KB Retrieval:**
+- Precision: ~85% (hybrid search)
+- Coverage: 124-page sustainability report
+
+---
+
+## Best Practices
+
+### Question Formulation
+
+**Good Questions (clear and specific):**
+- "삼성물산의 2024년 탄소배출량은?"
+- "삼성물산과 GS건설의 LTIR을 비교해줘"
+- "현대자동차 ESG 보고서 최신 내용"
+
+**Unclear Questions (will trigger clarification):**
+- "주요 회사들의 성과는?" (which companies?)
+- "ESG 현황 알려줘" (which company? which aspect?)
+- "최근 비교 분석" (compare what?)
+
+### Efficient Usage
+
+1. **Be specific** - Name companies and metrics explicitly
+2. **Ask summary first** - Get concise answer quickly
+3. **Request report if needed** - "보고서 만들어줘" for detailed analysis
+4. **Provide context** - Follow-up questions reference previous discussion
+
+### Report Generation Tips
+
+**Best practice:**
 ```
-agentic-multi-agent/
-├── src/
-│   ├── agents/                      # Strands Agents implementations
-│   │   ├── __init__.py              # Agent exports
-│   │   ├── plan_models.py           # Pydantic schemas (ExecutionPlan, Step)
-│   │   ├── supervisor_agent_v2.py   # Orchestrator with clarification
-│   │   ├── planner_agent.py         # JSON plan creator
-│   │   ├── executor_agent.py        # Plan executor with early termination
-│   │   ├── esg_agent.py             # Samsung C&T KB specialist
-│   │   ├── research_agent.py        # Web search specialist
-│   │   ├── aggregator_agent.py      # Data synthesis and comparison
-│   │   └── report_agent.py          # HTML/PDF report generator
-│   │
-│   ├── tools/                       # MCP Tools (@tool decorator)
-│   │   ├── __init__.py              # Tool exports
-│   │   ├── bedrock_kb_tool.py       # KB retrieval (hybrid search)
-│   │   ├── search_tools.py          # DuckDuckGo web + news
-│   │   └── report_tools.py          # HTML creation + PDF conversion
-│   │
-│   ├── chatbot_cli.py               # Rich CLI with clarification loop
-│   ├── pdf_to_markdown.py           # OCR converter (Claude Sonnet Vision)
-│   ├── bedrock_client.py            # Bedrock API wrapper
-│   ├── image_extractor.py           # PDF image extraction (PyMuPDF)
-│   └── config.py                    # AWS and model configuration
-│
-├── mcp/                             # MCP Server Implementations
-│   ├── bedrock_kb/                  # (Legacy, not used)
-│   ├── duckduckgo/                  # (Legacy, not used)
-│   └── html2pdf/                    # Node.js PDF converter
-│       ├── src/
-│       │   ├── index.ts             # CLI entry point
-│       │   ├── pdf-converter.ts     # Puppeteer wrapper
-│       │   └── types.ts             # TypeScript types
-│       ├── dist/                    # Compiled JavaScript
-│       ├── package.json
-│       └── tsconfig.json
-│
-├── tests/
-│   ├── __init__.py
-│   └── test_strands_agents.py       # Complete test suite (13 tests)
-│
-├── reports/                          # Generated HTML/PDF reports
-│   ├── *.html                       # Professional styled reports
-│   └── *.pdf                        # PDF versions (scale 80%)
-│
-├── output/                          # OCR outputs
-│   ├── samsung_ct_2025_sustainability_report_full.md  # 571KB, 124 pages
-│   └── samsung_ct_2025_sustainability_report_full_images/
-│       ├── page_001.png - page_124.png  # 450 DPI page images
-│       ├── page_XXX_img_YYY.png         # Extracted embedded images
-│       └── *_metadata.json              # Image metadata
-│
-├── archive/
-│   └── v1_simple_routing/           # LangChain-based implementation
-│
-├── requirements.txt                 # Python dependencies
-├── README.md                        # This file 
-└── README-parsing.md                # PDF parsing method
+Step 1: Ask detailed question first
+User: "삼성물산 본사와 해외 자회사의 매출, 자산을 고려했을 때
+       지속가능성 공시 의무화에 해당되는 국가는?"
+Bot: [Comprehensive answer...]
+
+Step 2: Request report
+User: "보고서 만들어줘"
+Bot: [Generates HTML/PDF from previous answer - fast]
+```
+
+**Avoid:**
+```
+User: "보고서 만들어줘" (without previous discussion)
+Bot: 먼저 관련 질문을 해주세요...
 ```
 
 ---
 
-## Technology Stack
+## Roadmap
 
-### Core Framework
+### Current Status: v2.5 (Production-Ready)
 
-- **Strands Agents SDK** `1.18.0+`
-  - Multi-agent orchestration
-  - Native A2A communication
-  - MCP tool integration
-  - Built-in observability
+- ✅ Strands Agents multi-agent system
+- ✅ Planner-Executor pattern
+- ✅ Intelligent Report Agent (adaptive data collection)
+- ✅ 3-stage report generation (timeout prevention)
+- ✅ Clarification loop (multi-level)
+- ✅ Conversation history
+- ✅ Markdown fallback
+- ✅ 16/16 tests passing
 
-### AWS Services
+### Future Enhancements (Phase 3)
 
-- **Amazon Bedrock**
-  - Runtime: Claude Sonnet 4.5 inference
-  - Agent Runtime: Knowledge Base retrieval
-  - Inference Profile: `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
-
-- **Bedrock Knowledge Base**
-  - Vector Model: Amazon Titan Embeddings v2
-  - Search: Hybrid (keyword + semantic)
-
-### Language Models
-
-- **Claude Sonnet 4.5** (all agents)
-  - Max Tokens: 8192
-  - Temperature: 0 (deterministic)
-  - Input: $3/million tokens
-  - Output: $15/million tokens
-
-### Data & Validation
-
-- **Pydantic** `2.12.4+`
-  - Structured plan schemas
-  - Type validation
-  - JSON serialization
-
-### Integration
-
-- **boto3** `1.35.0+` - AWS SDK
-- **duckduckgo-search** `7.0.0+` - Web/news search
-- **pdf2image** `1.17.0+` - PDF conversion
-- **pymupdf** `1.24.0+` - Image extraction
-
-### User Interface
-
-- **Rich** `14.2.0+` - Terminal UI
-  - Markdown rendering
-  - Progress indicators
-  - Colored output
-
-### Report Generation
-
-- **Node.js** `20+` - Runtime for HTML2PDF
-- **Puppeteer** - Headless Chrome for PDF rendering
-- **TypeScript** - Type-safe PDF conversion
-
-### Testing
-
-- **pytest** `8.0.0+` - Test framework
-- **pytest-asyncio** - Async test support
-- **pytest-cov** - Coverage reporting
+- [ ] Streamlit web interface
+- [ ] User authentication
+- [ ] Conversation persistence (database)
+- [ ] Multi-session support
+- [ ] Advanced analytics dashboard
+- [ ] AWS deployment (ECS/Lambda)
 
 ---
 
-## AWS Solutions Architect Perspective
+## Technical Details
 
-### PoC Objectives
+### Document Processing Pipeline
 
-This Proof of Concept was developed to demonstrate:
+**PDF to Markdown Conversion:**
+```
+Samsung C&T PDF (12.6MB, 124 pages)
+    ↓
+pdf2image (450 DPI PNG)
+    ↓
+Claude Sonnet 4.5 OCR (Vision API)
+    ↓
+Markdown (571KB, 9,979 lines)
+    ↓
+Image Extraction (PyMuPDF)
+    ↓
+35 images with metadata
+    ↓
+Bedrock Knowledge Base ingestion
+    ↓
+Hybrid Search (keyword + semantic)
+```
 
-1. **Advanced AI Agent Patterns**
-   - Multi-agent orchestration with specialization
-   - Dynamic planning and execution
-   - Agent-to-agent communication
+### Knowledge Base Configuration
 
-2. **AWS Bedrock Expertise**
-   - Claude Sonnet 4.5 for all agents (single model, multi-agent)
-   - Knowledge Base integration (hybrid search)
-   - Inference profiles for global model access
+```json
+{
+  "knowledgeBaseId": "HGDLU1PVQE",
+  "retrievalConfiguration": {
+    "vectorSearchConfiguration": {
+      "numberOfResults": 10,
+      "overrideSearchType": "HYBRID"
+    }
+  }
+}
+```
 
-3. **Production-Ready Architecture**
-   - Efficiency optimization (6x improvement)
-   - Cost optimization (70% reduction)
-   - Error handling and resilience
-   - Observability and debugging
+### Agent Configuration
 
-4. **Modern Integration Patterns**
-   - Model Context Protocol (MCP)
-   - Strands Agents framework
-   - Pydantic data validation
-   - Streaming and early termination
+```python
+from strands import Agent
 
-### Key Technical Decisions
-
-#### 1. Why Claude Sonnet 4.5 for All Agents?
-
-**Decision:** Use single model for all agents instead of mixing models (e.g., Haiku for simple, Sonnet for complex).
-
-**Rationale:**
-- **Consistency:** Same reasoning quality across all agents
-- **Simplicity:** Single model configuration, easier deployment
-- **Cost:** Efficiency optimizations reduced costs by 70%, making Sonnet affordable
-- **Quality:** Superior performance on Korean text and complex reasoning
-
-**Trade-offs:**
-- Higher per-token cost than Haiku
-- Mitigated by: Efficiency guidelines, early termination, concise outputs
-
-#### 2. Why Strands Agents over LangChain?
-
-**Decision:** Migrate from LangChain to Strands Agents mid-project.
-
-**Rationale:**
-- **Native A2A:** Built-in agent-as-tool pattern
-- **MCP First-Class:** Native Model Context Protocol support
-- **Simplicity:** 5x reduction in lines of code
-- **Production Ready:** Built-in observability and error handling
-
-**Trade-offs:**
-- Less mature ecosystem than LangChain
-- Fewer integrations (but MCP covers most needs)
-- Mitigated by: Cleaner code, faster development
-
-#### 3. Why Planner-Executor over Simple Routing?
-
-**Decision:** Implement dynamic planning instead of hard-coded routing.
-
-**Rationale:**
-- **Flexibility:** Handle complex, multi-step queries without predefined flows
-- **Scalability:** Easy to add new step types and agents
-- **Optimization:** Early termination saves costs
-- **User Experience:** Adaptive complexity handling
-
-**Trade-offs:**
-- Added complexity (Planner Agent, Executor logic)
-- Higher latency for simple queries
-- Mitigated by: Route simple queries directly, skip planning
-
-#### 4. Why Hybrid Search?
-
-**Decision:** Use Bedrock KB hybrid search (keyword + semantic) instead of pure vector search.
-
-**Rationale:**
-- **Accuracy:** Combines exact matching with semantic understanding
-- **Robustness:** Works for both technical terms (e.g., "LTIR") and concepts (e.g., "안전 성과")
-- **Simplicity:** Built into Bedrock KB, no custom logic needed
-
-**Trade-offs:**
-- Slightly slower than pure vector search
-- Higher cost per query ($0.0001 vs free for local vector DB)
-- Mitigated by: Minimal cost difference, superior accuracy
-
-### Architectural Considerations for Production
-
-#### Scalability
-
-**Current (PoC):**
-- Single-threaded CLI
-- Synchronous agent calls
-- In-memory state
-
-**Production Recommendations:**
-1. **API Layer:** FastAPI for RESTful endpoints
-2. **Async Agents:** Concurrent agent calls where independent
-3. **State Management:** Redis for conversation history
-4. **Queueing:** SQS for long-running report generation
-
-#### Observability
-
-**Current (PoC):**
-- Console logging
-- Strands built-in tracing
-
-**Production Recommendations:**
-1. **CloudWatch Logs:** Centralized logging with structured JSON
-2. **CloudWatch Metrics:** Track latency, tool calls, costs
-3. **X-Ray:** Distributed tracing across agents
-4. **Langfuse:** Agent-specific observability (alternative to CloudWatch)
-
-#### Deployment
-
-**Current (PoC):**
-- Local execution (EC2 development instance)
-
-**Production Options:**
-
-**Option 1: AWS Lambda (Serverless)**
-- Pros: Auto-scaling, pay-per-use, zero management
-- Cons: 15-minute timeout (may limit report generation)
-- Best for: API endpoints with 30s response time
-
-**Option 2: ECS Fargate (Containers)**
-- Pros: No timeout, full control, stateful sessions
-- Cons: Always-running costs, more management
-- Best for: Web UI with long sessions
-
-**Option 3: ECS + Lambda Hybrid**
-- Lambda: Real-time Q&A (fast responses)
-- ECS: Report generation (long-running tasks)
-- SQS: Queue reports from Lambda to ECS
-
-**Recommendation:** Start with Lambda for API, add ECS for reports if needed.
+agent = Agent(
+    model="global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    tools=[tool1, tool2],
+    system_prompt="Your role...",
+    max_tokens=8192,
+    temperature=0
+)
+```
 
 ---
 
-## Results & Impact
+## Troubleshooting
 
-### Performance Achievements
+### Common Issues
 
-- **6x Tool Call Reduction:** 60 → 5-10 calls for complex queries
-- **2-3x Faster Responses:** 60-90s → 15-30s for complex analysis
-- **70% Cost Reduction:** Through efficiency optimizations
-- **100% Document Conversion:** 124/124 pages successfully processed
-- **13/13 Tests Passing:** Comprehensive test coverage
+**1. Report generation timeout**
+- Fixed with 3-stage generation
+- Each stage < 10s
+- Haiku 4.5 prevents timeout
 
-### Technical Achievements
+**2. Markdown syntax in HTML report**
+- Auto-detected and converted
+- markdown library with tables extension
 
-- **Production-Ready Multi-Agent System:** Strands Agents + AWS Bedrock
-- **Dynamic Planner-Executor Pattern:** Handles arbitrary complexity
-- **Smart Clarification Loop:** Minimal user friction (1-2 questions)
-- **Early Termination:** 30-50% time savings on applicable queries
-- **MCP Integration:** 3 MCP servers with standardized protocol
+**3. PDF conversion fails**
+- ES modules compatibility (.mjs)
+- Check Node.js version (20+)
+- npm install in mcp/html2pdf/
 
-### Innovation Highlights
-
-1. **Agent-as-Tool Pattern:** Seamless A2A communication
-2. **Adaptive Complexity:** 5/10/15 step limits based on question
-3. **Hybrid Architecture:** Combines planning, routing, and direct responses
-4. **Efficiency-First Design:** All agents optimized for minimal tool calls
-5. **Korean Language Support:** 95%+ OCR accuracy with Claude Sonnet 4.5
-
----
-
-## Lessons Learned
-
-### What Worked Well
-
-1. **Strands Agents Migration:** 5x code reduction, much cleaner architecture
-2. **Efficiency Optimization:** Prompt engineering alone achieved 6x improvement
-3. **Pydantic Validation:** Structured plans prevented many runtime errors
-4. **Early Termination:** Significant cost savings with simple logic
-5. **Lenient Clarification:** Users prefer smart assumptions over excessive questions
-
-### What Was Challenging
-
-1. **LangChain Complexity:** Initial implementation was overly complex, prompted rewrite
-2. **Korean OCR Quality:** Required model upgrade (Haiku → Sonnet) for 95%+ accuracy
-3. **Bedrock Timeouts:** Some pages timeout with Sonnet, needed Haiku fallback
-4. **Tool Call Proliferation:** Initial agents made 60+ calls, required aggressive optimization
-
-### Key Takeaways
-
-1. **Choose the Right Framework:** Evaluate multiple options before committing
-2. **Optimize Early:** Efficiency should be designed-in, not bolted-on
-3. **Test with Real Data:** Synthetic tests don't reveal real issues (e.g., Korean text problems)
-4. **User Experience Matters:** Clarification loop improvements dramatically increased usability
-
----
-
-## Acknowledgments
-
-### Technologies
-
-- **Strands Agents SDK** - Elegant multi-agent framework
-- **Amazon Bedrock** - Claude Sonnet 4.5 and Knowledge Base infrastructure
-- **DuckDuckGo** - Free, privacy-respecting search API
-- **Puppeteer** - Reliable HTML to PDF conversion
-
-### Data Source
-
-- **Samsung C&T Corporation** - Public sustainability report demonstrating ESG leadership
+**4. KB returns no results**
+- Check AWS credentials
+- Verify KB ID: HGDLU1PVQE
+- Check region: us-west-2
 
 ---
 
 ## License
 
-MIT License - Internal use and portfolio demonstration.
+MIT License
 
 ---
 
-**Built with Strands Agents, Amazon Bedrock, and Model Context Protocol**
+## Author
 
-**Technology Stack:** Python 3.12 | Claude Sonnet 4.5 & Amazon Bedrock | Strands Agents 1.18.0 | Pydantic 2.12.4
+Built by AWS Solutions Architect as PoC for demonstrating:
+- Agentic multi-agent patterns
+- Agent-to-Agent (A2A) communication
+- Model Context Protocol (MCP) integration
+- Strands Agents framework
+- AWS Bedrock Claude models
+- Production-ready AI systems
 
-**Source Code:** [GitHub Repository](https://github.com/jesamkim/agentic-multi-agent)
+**Data Source**: Samsung C&T 2025 Sustainability Report (publicly available)
 
+---
+
+## Acknowledgments
+
+- **Strands Agents SDK** - Multi-agent orchestration framework
+- **AWS Bedrock** - Claude Sonnet 4.5 & Haiku 4.5
+- **Anthropic** - Claude models
+- **Model Context Protocol** - Standardized tool interface
+- **Samsung C&T** - Public sustainability report

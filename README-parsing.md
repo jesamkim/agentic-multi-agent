@@ -1,6 +1,6 @@
 # PDF to Markdown Converter
 
-Zerox OCR 방식을 사용하여 PDF 문서를 Markdown으로 변환하는 도구입니다. Amazon Bedrock의 Claude Haiku 4.5 / Sonnet 4.5 모델을 사용하여 고품질의 문서 파싱을 제공합니다.
+Zerox OCR 방식을 사용하여 PDF 문서를 Markdown으로 변환하는 도구입니다. Amazon Bedrock의 Claude Haiku 4.5 Vision 모델을 사용하여 고품질의 문서 파싱을 제공합니다.
 
 ## 주요 특징
 
@@ -388,6 +388,6 @@ with pdfplumber.open("document.pdf") as pdf:
 - [pdfplumber Documentation](https://github.com/jsvine/pdfplumber) - MIT 라이센스 대체 라이브러리
 
 ### 데이터 보안 및 규정 준수
-- [Amazon Bedrock Data Privacy](https://aws.amazon.com/bedrock/faqs/#Data_privacy) - Bedrock 데이터 프라이버시 FAQ
+- [AWS Bedrock Data Privacy](https://aws.amazon.com/bedrock/faqs/#Data_privacy) - Bedrock 데이터 프라이버시 FAQ
 - [AWS Data Processing Addendum](https://aws.amazon.com/compliance/gdpr-center/) - GDPR 규정 준수 정보
 - [AWS Compliance Programs](https://aws.amazon.com/compliance/programs/) - AWS 인증 및 규정 준수 프로그램

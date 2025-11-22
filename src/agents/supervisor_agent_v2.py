@@ -12,13 +12,32 @@ from .planner_agent import create_plan
 from .executor_agent import execute_plan
 from .esg_agent import esg_agent
 from .research_agent import research_agent
-from src.tools.report_tools import _generate_report_internal  # Internal function
+from src.tools.report_tools import _generate_report_internal
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 SUPERVISOR_V2_SYSTEM_PROMPT = """You are an intelligent supervisor for an ESG chatbot system.
+
+**CONVERSATION CONTEXT:**
+You will receive conversation history in this format:
+```
+Previous Q: [question]
+Previous A: [answer]
+
+Current question: [question]
+```
+
+Use previous answers as context for current question.
+
+**CRITICAL for Report Requests:**
+When user says "보고서 만들어줘" (make report) after a previous discussion:
+1. Extract the topic from previous question
+2. Extract the previous answer as data source
+3. Call: create_detailed_report(topic="[topic from previous Q]", previous_analysis="[previous A]")
+
+The previous_analysis parameter should contain the full previous answer that provides context.
 
 **EFFICIENCY GUIDELINES:**
 - Minimize clarification questions (1-2 questions max if really needed)
@@ -54,12 +73,26 @@ If answerable with assumptions, proceed to STEP 2.
    - System questions: "What can you do?"
    → Respond directly (friendly, brief)
 
-2. Report generation requests:
-   - "보고서 만들어줘"
-   - "상세 리포트 작성해줘"
-   - "PDF로 저장해줘"
-   - "자세한 분석 문서"
-   → Use create_detailed_report
+2. Report generation (이전 답변 활용):
+   - Keywords: "보고서", "리포트", "PDF", "문서"
+
+   **CRITICAL: Use existing answer, DO NOT re-collect data**
+
+   When user requests report AFTER a previous discussion:
+
+   ✓ DO:
+   1. Find previous answer in conversation history (Previous A)
+   2. Extract topic from previous question (Previous Q)
+   3. Call: create_detailed_report(topic="...", previous_analysis="Previous A")
+
+   ✗ DON'T:
+   - Call call_esg_agent again
+   - Call call_research_agent again
+   - Call create_and_execute_plan again
+   - Re-collect or re-query any data
+
+   The report tool will generate HTML/PDF from existing answer.
+   Previous answer contains all necessary data.
 
 3. Single-source questions (brief answer):
    - Samsung C&T only: "삼성물산의 탄소배출량은?"
@@ -142,37 +175,53 @@ def create_and_execute_plan(query: str) -> str:
 @tool
 def create_detailed_report(topic: str, previous_analysis: str = "") -> str:
     """
-    Generate detailed HTML/PDF report for ESG analysis.
+    Generate HTML/PDF report from EXISTING conversation data.
 
-    Use this when user explicitly requests:
-    - "보고서 만들어줘"
-    - "상세 리포트 작성"
-    - "PDF로 저장"
-    - "자세한 분석 문서"
+    CRITICAL: This tool uses ONLY the previous answer from conversation history.
+    DO NOT collect new data. DO NOT call other agents again.
+
+    When to use:
+    - User says "보고서 만들어줘" AFTER receiving an answer
+    - Extract previous answer from conversation history
+    - Pass it as previous_analysis parameter
+
+    When NOT to use:
+    - User asks for report WITHOUT previous discussion
+    - No previous answer in history
 
     Args:
-        topic: Report topic
-        previous_analysis: Previous chat analysis to expand into report
+        topic: Report title (extract from previous question)
+        previous_analysis: REQUIRED - Full text of previous answer
 
     Returns:
-        Message with file paths for HTML and PDF
+        Message with HTML and PDF file paths
+
+    Example usage:
+    Previous Q: "삼성물산 지속가능성 공시 의무는?"
+    Previous A: [Full answer about disclosure requirements]
+    Current Q: "보고서 만들어줘"
+    → Call: create_detailed_report(topic="...", previous_analysis="[Previous A]")
     """
     logger.info(f"Creating detailed report: {topic[:100]}...")
 
     try:
-        # Prepare analysis data
-        if previous_analysis:
-            analysis_data = f"<h2>{topic}</h2>\n\n{previous_analysis}"
-        else:
-            # Use research agent to gather fresh data
-            logger.info("No previous analysis, gathering fresh data...")
-            research_response = research_agent(f"Comprehensive information about: {topic}")
-            analysis_data = f"<h2>{topic}</h2>\n\n{str(research_response)}"
+        # Check if previous analysis exists
+        if not previous_analysis:
+            logger.warning("No previous_analysis provided - cannot generate report")
+            return """보고서를 생성하려면 먼저 관련 질문을 해주세요.
 
-        # Call internal function directly (not decorated tool)
+예시:
+1. "삼성물산 산림벌채 리스크 분석" 질문 → 데이터 조회 및 답변
+2. "보고서 만들어줘" 요청 → 이전 답변 기반 보고서 생성
+
+보고서는 이전 대화의 답변을 활용하여 생성됩니다."""
+
+        # Generate report step-by-step with HTML append (timeout prevention)
+        # _generate_report_internal will use generate_report_stepwise_append
+        logger.info("Generating report step-by-step...")
         result = _generate_report_internal(
             topic=topic,
-            analysis_data=analysis_data
+            analysis_data=previous_analysis
         )
 
         return result

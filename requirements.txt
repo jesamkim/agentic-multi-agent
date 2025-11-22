@@ -34,3 +34,6 @@ pytest-asyncio>=0.23.0
 
 # Web search capabilities
 duckduckgo-search>=6.0.0
+
+# Markdown to HTML conversion
+markdown>=3.5
