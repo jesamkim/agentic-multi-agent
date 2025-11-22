@@ -597,7 +597,7 @@ flowchart TD
     end
 
     subgraph Backends["Backend Services"]
-        BedrockKB["AWS Bedrock<br/>Knowledge Base<br/>KB ID: HGDLU1PVQE<br/>Hybrid Search"]
+        BedrockKB["Amazon Bedrock<br/>Knowledge Base<br/>Hybrid Search"]
         DuckDuckGo["DuckDuckGo API<br/>Web + News Search<br/>Region: kr-kr"]
         Puppeteer["Node.js Puppeteer<br/>HTML → PDF<br/>Scale 80%, A4"]
     end
