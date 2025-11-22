@@ -1103,9 +1103,7 @@ Bot: 먼저 관련 질문을 해주세요...
 
 ---
 
-## Roadmap
-
-### Current Status: v2.5 (Production-Ready)
+## Current Status: v2.5 (Production-Ready)
 
 - ✅ Strands Agents multi-agent system
 - ✅ Planner-Executor pattern
@@ -1115,15 +1113,6 @@ Bot: 먼저 관련 질문을 해주세요...
 - ✅ Conversation history
 - ✅ Markdown fallback
 - ✅ 16/16 tests passing
-
-### Future Enhancements (Phase 3)
-
-- [ ] Streamlit web interface
-- [ ] User authentication
-- [ ] Conversation persistence (database)
-- [ ] Multi-session support
-- [ ] Advanced analytics dashboard
-- [ ] AWS deployment (ECS/Lambda)
 
 ---
 
@@ -1200,7 +1189,7 @@ agent = Agent(
 
 **4. KB returns no results**
 - Check AWS credentials
-- Verify KB ID: HGDLU1PVQE
+- Verify KB ID: HGDLU1PVQE <-- Need to replace YOUR KB_ID
 - Check region: us-west-2
 
 ---
