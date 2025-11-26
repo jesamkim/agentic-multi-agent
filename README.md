@@ -8,7 +8,7 @@
 [![MCP](https://img.shields.io/badge/Protocol-MCP-green)](https://modelcontextprotocol.io/)
 
 **Key Achievements:**
-- 100% document conversion (124-page PDF → Markdown with 95%+ accuracy)
+- PDF-to-Markdown conversion using Claude Sonnet 4.5 OCR
 - Production-ready multi-agent orchestration with A2A communication
 - Intelligent report generation with timeout prevention
 - Sub-30s response time for complex queries
@@ -438,7 +438,7 @@ User: "Company A 0.15, Company B 0.18. Company A가 우수합니다."
 - Region: us-west-2
 - Profile: default (or your custom AWS profile)
 
-**Data Source**: Enterprise sustainability reports processed with Claude Sonnet 4.5 OCR (450 DPI, 95%+ accuracy)
+**Data Source**: Enterprise sustainability reports converted to Markdown using PDF-to-Markdown converter with Claude Sonnet 4.5 OCR
 
 **Usage:**
 ```python
