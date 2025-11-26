@@ -31,13 +31,19 @@ Advanced **agentic multi-agent system** for enterprise ESG analysis. Built as AW
 
 ### Demo: System in Action
 
-![System Demo](./img/Screenshot01.png)
+**Welcome Screen:**
 
-*Real-time ESG analysis with intelligent report generation. The screenshot demonstrates:*
-- *Structured answers with Rich CLI formatting (핵심 발견사항, TOP 3 투자 우선순위, 주요 리스크)*
-- *Intelligent data collection: Report Agent automatically calls `get_additional_esg_data` when needed*
-- *Multi-tool execution: `create_detailed_report` → `get_additional_esg_data` → `get_esg_knowledge` (Bedrock KB)*
-- *Samsung C&T ESG data retrieval from Knowledge Base (기후변화 대응, 온실가스 배출 실적)*
+![Welcome Screen](./img/screenshot_welcome.png)
+
+**Query & Response:**
+
+![Query Result](./img/screenshot_result.png)
+
+*Real-time ESG analysis with intelligent report generation. The screenshots demonstrate:*
+- *Rich CLI interface with formatted panels and markdown rendering*
+- *Multi-agent architecture: Supervisor → ESG Agent → Bedrock Knowledge Base*
+- *Structured responses with markdown formatting for readability*
+- *Fast response time (sub-5 seconds for simple queries)*
 
 ---
 
@@ -79,7 +85,7 @@ flowchart TD
     MCP_Search -->|API| DuckDuckGo[DuckDuckGo<br/>Web + News Search]
     MCP_PDF -->|subprocess| PDFEngine[Node.js Puppeteer<br/>HTML → PDF]
 
-    BedrockKB --> BedrockRuntime[AWS Bedrock Runtime<br/>Claude Sonnet 4.5<br/>Inference Profile]
+    BedrockKB --> BedrockRuntime[Amazon Bedrock Runtime<br/>Claude Sonnet 4.5<br/>Inference Profile]
 
     Supervisor -.->|Clarification| User
     ReportAgent -.->|Clarification if needed| User
@@ -110,7 +116,7 @@ flowchart TD
 - **Teal**: Planning & Execution
 - **Green**: Specialized Agents
 - **Yellow**: MCP Tool Layer
-- **Blue**: AWS Bedrock Services
+- **Blue**: Amazon Bedrock Services
 - **Dotted**: Clarification Loop
 
 ### Key Architectural Principles
@@ -163,7 +169,7 @@ flowchart TD
 **Role**: Samsung C&T ESG knowledge expert
 
 **Data Source**:
-- AWS Bedrock Knowledge Base (HGDLU1PVQE)
+- AWS Bedrock Knowledge Base (YOUR_KB_ID)
 - Samsung C&T 2025 Sustainability Report
 - 124 pages, 571KB Markdown, 35 images
 
@@ -428,10 +434,10 @@ User: "삼성물산 0.15, GS건설 0.18. 삼성물산이 우수합니다."
 **Tool**: `get_esg_knowledge(query: str, num_results: int = 10)`
 
 **Configuration:**
-- KB ID: `HGDLU1PVQE`
+- KB ID: `YOUR_KB_ID`
 - Search Type: HYBRID (keyword + semantic)
 - Region: us-west-2
-- Profile: profile2
+- Profile: default (or your custom AWS profile)
 
 **Data Source**: Samsung C&T 2025 Sustainability Report
 - 124 pages
@@ -824,14 +830,14 @@ sct-esg/
 
 ### Core Frameworks
 - **Strands Agents SDK** 1.18.0 - Multi-agent orchestration with A2A
-- **AWS Bedrock** - Claude Sonnet 4.5 & Haiku 4.5 inference
+- **Amazon Bedrock** - Claude Sonnet 4.5 & Haiku 4.5 inference
 - **Pydantic** 2.12.4 - Structured data validation
 - **Rich** 14.2.0 - Enhanced CLI interface
 
 ### AWS Services
 - **Bedrock Runtime** - LLM inference (Claude models)
 - **Bedrock Agent Runtime** - Knowledge Base retrieval
-- **Knowledge Base** HGDLU1PVQE - Samsung C&T ESG documents
+- **Knowledge Base** YOUR_KB_ID - Samsung C&T ESG documents
 
 ### MCP Integration
 - **Bedrock KB** - Python @tool decorator
@@ -859,7 +865,7 @@ sct-esg/
 - **Node.js 20+** (for PDF conversion)
 - **AWS CLI** configured with profile
 - **Bedrock access** with Claude Sonnet 4.5 & Haiku 4.5
-- **Knowledge Base** HGDLU1PVQE in us-west-2
+- **Knowledge Base** created in Amazon Bedrock (update YOUR_KB_ID in config)
 
 ### Installation Steps
 
@@ -882,7 +888,19 @@ npm run build
 cd ../..
 
 # 5. Configure AWS credentials
-# Edit src/config.py or use AWS_PROFILE environment variable
+# For default profile:
+aws configure
+# Enter your AWS Access Key ID, Secret Access Key, and region
+
+# For custom profile (optional):
+aws configure --profile your-profile-name
+# Then update AWS_PROFILE in src/config.py to match your profile name
+
+# 6. Update configuration
+# Edit src/config.py:
+# - Set AWS_PROFILE (default or your custom profile)
+# - Set AWS_REGION (must match your KB region)
+# - Set KB_ID (your Bedrock Knowledge Base ID)
 ```
 
 ### Configuration
@@ -890,15 +908,15 @@ cd ../..
 **src/config.py:**
 ```python
 # AWS Configuration
-AWS_PROFILE = "profile2"
-AWS_REGION = "us-west-2"
+AWS_PROFILE = "default"  # Change to your AWS CLI profile name if using custom profile
+AWS_REGION = "us-west-2"  # Change to your KB region
 
 # Bedrock Models
 SUPERVISOR_MODEL = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 REPORT_MODEL = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 
 # Knowledge Base
-KB_ID = "HGDLU1PVQE"
+KB_ID = "YOUR_KB_ID"  # Replace with your Bedrock Knowledge Base ID
 
 # Bedrock Configuration
 MAX_TOKENS = 8192
@@ -1011,55 +1029,6 @@ pytest tests/test_supervisor_agent.py -v
 
 ---
 
-## Cost Analysis
-
-### Per Query Costs
-
-| Query Type | Tool Calls | Tokens (in/out) | Cost (est.) |
-|------------|------------|-----------------|-------------|
-| Simple ESG | 2 | 500 / 200 | ~$0.01 |
-| Complex comparison | 8-10 | 3000 / 500 | ~$0.05 |
-| Report (3-stage) | 3 | 2000 / 2400 | ~$0.03 |
-
-### Monthly Estimates
-
-**1,000 queries/month (mixed usage):**
-- 500 simple: $5
-- 400 complex: $20
-- 100 reports: $3
-- **Total: ~$28/month**
-
-**Cost Optimizations:**
-- Early termination saves 30-50% on some queries
-- Report reuse prevents redundant KB/Web queries
-- Haiku for reports (3x cheaper than Sonnet)
-
----
-
-## Performance Metrics
-
-### Response Times
-
-| Query Type | Time | Notes |
-|------------|------|-------|
-| Simple ESG | 3-5s | Direct KB query |
-| Complex (2-3 companies) | 15-20s | With early termination |
-| Report (sufficient data) | 15-18s | 3-stage generation |
-| Report (data collection) | 20-25s | Includes additional queries |
-
-### Accuracy
-
-**OCR Quality (PDF → Markdown):**
-- Korean text: ~95% (Claude Sonnet 4.5, 450 DPI)
-- Tables: ~95% (hierarchical structure preserved)
-- Images: 35 extracted with metadata
-
-**KB Retrieval:**
-- Precision: ~85% (hybrid search)
-- Coverage: 124-page sustainability report
-
----
-
 ## Best Practices
 
 ### Question Formulation
@@ -1103,19 +1072,6 @@ Bot: 먼저 관련 질문을 해주세요...
 
 ---
 
-## Current Status: v2.5 (Production-Ready)
-
-- ✅ Strands Agents multi-agent system
-- ✅ Planner-Executor pattern
-- ✅ Intelligent Report Agent (adaptive data collection)
-- ✅ 3-stage report generation (timeout prevention)
-- ✅ Clarification loop (multi-level)
-- ✅ Conversation history
-- ✅ Markdown fallback
-- ✅ 16/16 tests passing
-
----
-
 ## Technical Details
 
 ### Document Processing Pipeline
@@ -1143,7 +1099,7 @@ Hybrid Search (keyword + semantic)
 
 ```json
 {
-  "knowledgeBaseId": "HGDLU1PVQE",
+  "knowledgeBaseId": "YOUR_KB_ID",
   "retrievalConfiguration": {
     "vectorSearchConfiguration": {
       "numberOfResults": 10,
@@ -1189,8 +1145,8 @@ agent = Agent(
 
 **4. KB returns no results**
 - Check AWS credentials
-- Verify KB ID: HGDLU1PVQE <-- Need to replace YOUR KB_ID
-- Check region: us-west-2
+- Verify your KB ID is correctly set in src/config.py
+- Check region matches your KB location (default: us-west-2)
 
 ---
 
@@ -1217,7 +1173,7 @@ Built by AWS Solutions Architect as PoC for demonstrating:
 ## Acknowledgments
 
 - **Strands Agents SDK** - Multi-agent orchestration framework
-- **AWS Bedrock** - Claude Sonnet 4.5 & Haiku 4.5
+- **Amazon Bedrock** - Claude Sonnet 4.5 & Haiku 4.5
 - **Anthropic** - Claude models
 - **Model Context Protocol** - Standardized tool interface
 - **Samsung C&T** - Public sustainability report
