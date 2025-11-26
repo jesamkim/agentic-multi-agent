@@ -1,12 +1,12 @@
 """
 Strands Agents - Planner + Executor Multi-Agent System with Clarification Loop
 
-Advanced multi-agent ESG chatbot architecture:
+Advanced multi-agent chatbot architecture:
 - Supervisor V2: Intelligent orchestrator with clarification loop
 - Planner Agent: Analyzes questions and creates execution plans
 - Executor: Interprets and executes plans
-- ESG Agent: Samsung C&T knowledge specialist
-- Research Agent: External ESG information specialist
+- Knowledge Agent: Internal knowledge specialist
+- Research Agent: External information specialist
 - Aggregator Agent: Data synthesis and comparison
 """
 

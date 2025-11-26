@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-REPORT_SYSTEM_PROMPT = """You are an HTML report section generator for ESG analysis.
+REPORT_SYSTEM_PROMPT = """You are an HTML report section generator for sustainability analysis.
 
 **Your role:**
 Generate ONLY the requested section in pure HTML format.

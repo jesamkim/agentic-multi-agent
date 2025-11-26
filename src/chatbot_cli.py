@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-CLI interface for ESG chatbot using Strands Agents.
+CLI interface for Agentic AI chatbot using Strands Agents.
 
 Provides an interactive command-line interface for asking questions
-about Samsung C&T's ESG practices and external ESG information.
+about sustainability practices and external information.
 """
 
 import sys
@@ -24,13 +24,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.agents import supervisor_agent
 
 
-class ESGChatbotCLI:
+class AgenticAIChatbotCLI:
     """
-    Command-line interface for multi-agent ESG chatbot.
-    
+    Command-line interface for multi-agent Agentic AI chatbot.
+
     Uses Supervisor Agent to route questions to specialized agents:
-    - ESG Agent: Samsung C&T knowledge base
-    - Search Agent: External ESG information
+    - Knowledge Agent: Internal knowledge base
+    - Search Agent: External information
     """
     
     def __init__(self):
@@ -49,28 +49,28 @@ class ESGChatbotCLI:
     def display_welcome(self):
         """Display welcome message."""
         welcome_text = """
-# Samsung C&T ESG Chatbot (Multi-Agent System)
+# Agentic AI Chatbot (Multi-Agent System)
 
-Welcome to the Samsung C&T ESG chatbot powered by Strands Agents.
+Welcome to the Agentic AI chatbot powered by Strands Agents.
 
 **What I can help you with:**
 
-1. Samsung C&T ESG Questions
+1. Internal Knowledge Base Questions
    - Sustainability practices and initiatives
    - Environmental impact and climate action
    - Social responsibility and governance
-   - ESG performance metrics
+   - Performance metrics and analysis
 
-2. External ESG Information
-   - Other companies' ESG reports
+2. External Information
+   - Company reports and analysis
    - Industry benchmarks and standards
-   - ESG news and trends
+   - News and trends
    - Regulatory updates
 
 **Multi-Agent Architecture:**
 - Supervisor Agent: Routes your questions intelligently
-- ESG Agent: Specialist for Samsung C&T (124-page report)
-- Search Agent: Specialist for external ESG information
+- Knowledge Agent: Specialist for internal knowledge base
+- Search Agent: Specialist for external information
 
 **Commands:**
 - Type your question to get started
@@ -90,13 +90,13 @@ Welcome to the Samsung C&T ESG chatbot powered by Strands Agents.
 - `history` - Display conversation history
 - `clear` - Clear conversation history
 - `help` - Show this help message
-- Any other text - Ask a question about ESG topics
+- Any other text - Ask your questions
 
 **Example Questions:**
 
-1. Samsung C&T: "삼성물산의 탄소배출량은?"
-2. Other Companies: "현대자동차 ESG 보고서"
-3. General ESG: "ESG rating agencies"
+1. Internal Knowledge: "탄소배출량은?"
+2. External Information: "현대자동차 지속가능성 보고서"
+3. General Topics: "지속가능성 평가 기관"
 """
         self.console.print(Panel(Markdown(help_text), title="Help", border_style="blue"))
     
@@ -360,7 +360,7 @@ convert().catch(err => {{
                 
                 # Check for commands
                 if user_input.lower() in ['quit', 'exit']:
-                    self.console.print("\n[cyan]Thank you for using the ESG chatbot! Goodbye![/cyan]")
+                    self.console.print("\n[cyan]Thank you for using the Agentic AI chatbot! Goodbye![/cyan]")
                     break
                 
                 elif user_input.lower() == 'help':
@@ -382,7 +382,7 @@ convert().catch(err => {{
                 response = self.process_question(user_input)
 
                 # Display response
-                self.console.print("\n[bold magenta]ESG Chatbot:[/bold magenta]")
+                self.console.print("\n[bold magenta]Agentic AI Chatbot:[/bold magenta]")
                 self.console.print(Panel(Markdown(response), border_style="magenta"))
                 
             except KeyboardInterrupt:
@@ -396,7 +396,7 @@ convert().catch(err => {{
 
 def main():
     """Main entry point."""
-    cli = ESGChatbotCLI()
+    cli = AgenticAIChatbotCLI()
     cli.run()
 
 

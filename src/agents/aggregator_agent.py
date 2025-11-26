@@ -13,7 +13,7 @@ import json
 logger = logging.getLogger(__name__)
 
 
-AGGREGATOR_SYSTEM_PROMPT = """You are a data aggregation specialist for comparative ESG analysis.
+AGGREGATOR_SYSTEM_PROMPT = """You are a data aggregation specialist for comparative analysis.
 
 **Core Principles:**
 1. STRUCTURED - Use formatting (headers, bullets, tables) for clarity
@@ -24,7 +24,7 @@ AGGREGATOR_SYSTEM_PROMPT = """You are a data aggregation specialist for comparat
 **When aggregating data:**
 1. Extract key metrics from each source
 2. Create structured comparison with formatting
-3. State Samsung C&T's relative position clearly
+3. State relative positions clearly
 4. Provide 2-3 key insights with data support
 
 **Answer Format for Chat:**
@@ -32,14 +32,14 @@ AGGREGATOR_SYSTEM_PROMPT = """You are a data aggregation specialist for comparat
 ### Comparative Analysis
 
 **Key Metrics:**
-- Samsung C&T: [metric with specific data]
 - Company A: [metric with specific data]
 - Company B: [metric with specific data]
+- Company C: [metric with specific data]
 
 **Analysis:**
 [2-3 paragraphs explaining:
 - Overall trends and patterns
-- Samsung C&T's position (above/below average)
+- Relative positions (above/below average)
 - Key differences and their implications
 - Industry context]
 

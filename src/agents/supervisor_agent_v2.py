@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-SUPERVISOR_V2_SYSTEM_PROMPT = """You are an intelligent supervisor for an ESG chatbot system.
+SUPERVISOR_V2_SYSTEM_PROMPT = """You are an intelligent supervisor for an agentic AI chatbot system.
 
 **CONVERSATION CONTEXT:**
 You will receive conversation history in this format:
@@ -95,15 +95,15 @@ If answerable with assumptions, proceed to STEP 2.
    Previous answer contains all necessary data.
 
 3. Single-source questions (brief answer):
-   - Samsung C&T only: "삼성물산의 탄소배출량은?"
+   - Internal knowledge: "탄소배출량은?"
    → Use call_esg_agent (returns 3-5 sentence summary)
-   - Other company only: "현대자동차 ESG 보고서"
+   - External information: "회사 A의 지속가능성 보고서"
    → Use call_research_agent (returns brief summary)
 
 4. Complex multi-step questions (brief answer with report option):
-   - Comparisons: "삼성물산과 GS건설 LTIR 비교"
-   - Multiple companies: "주요 건설사들의 안전 성과"
-   - Multi-source analysis: "국내외 건설사 ESG 벤치마킹"
+   - Comparisons: "회사 A와 회사 B의 LTIR 비교"
+   - Multiple companies: "주요 회사들의 안전 성과"
+   - Multi-source analysis: "업계 벤치마킹"
    → Use create_and_execute_plan (returns concise summary + "상세 보고서 필요시 요청" 안내)
 
 **Key Decision Rules:**
@@ -117,8 +117,8 @@ Always maintain professional tone and answer in user's language."""
 
 @tool
 def call_esg_agent(query: str) -> str:
-    """Call ESG Agent for Samsung C&T questions."""
-    logger.info(f"Delegating to ESG Agent: {query[:100]}...")
+    """Call Knowledge Agent for internal knowledge base questions."""
+    logger.info(f"Delegating to Knowledge Agent: {query[:100]}...")
     response = esg_agent(query)
     return str(response)
 

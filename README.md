@@ -17,9 +17,9 @@
 
 ## Overview
 
-Advanced **agentic multi-agent system** for enterprise ESG analysis. Built as AWS Solutions Architect DEMO, combining Amazon Bedrock, Strands Agents framework, and Model Context Protocol for intelligent sustainability report analysis.
+Advanced **agentic multi-agent system** for enterprise sustainability analysis. Built as AWS Solutions Architect DEMO, combining Amazon Bedrock, Strands Agents framework, and Model Context Protocol for intelligent sustainability report analysis.
 
-**Use Case:** Real-time Q&A and comprehensive HTML/PDF reporting on Samsung C&T's 2025 Sustainability Report (124 pages, publicly available document).
+**Use Case:** Real-time Q&A and comprehensive HTML/PDF reporting on enterprise sustainability reports (publicly available documents).
 
 **Technical Highlights:**
 - **7 specialized agents** with intelligent orchestration
@@ -39,9 +39,9 @@ Advanced **agentic multi-agent system** for enterprise ESG analysis. Built as AW
 
 ![Query Result](./img/screenshot_result.png)
 
-*Real-time ESG analysis with intelligent report generation. The screenshots demonstrate:*
+*Real-time sustainability analysis with intelligent report generation. The screenshots demonstrate:*
 - *Rich CLI interface with formatted panels and markdown rendering*
-- *Multi-agent architecture: Supervisor → ESG Agent → Bedrock Knowledge Base*
+- *Multi-agent architecture: Supervisor → Knowledge Agent → Bedrock Knowledge Base*
 - *Structured responses with markdown formatting for readability*
 - *Fast response time (sub-5 seconds for simple queries)*
 
@@ -55,29 +55,29 @@ Advanced **agentic multi-agent system** for enterprise ESG analysis. Built as AW
 flowchart TD
     User[User Interface<br/>CLI with Rich Formatting] --> Supervisor[Supervisor Agent V2<br/>Claude Sonnet 4.5<br/>Orchestrator + Clarification]
 
-    Supervisor -->|Simple Query| A2A_ESG[call_esg_agent<br/>A2A Communication]
+    Supervisor -->|Simple Query| A2A_Knowledge[call_knowledge_agent<br/>A2A Communication]
     Supervisor -->|External Query| A2A_Research[call_research_agent<br/>A2A Communication]
     Supervisor -->|Complex Query| A2A_Plan[create_and_execute_plan<br/>A2A Communication]
     Supervisor -->|Report Request| A2A_Report[create_detailed_report<br/>A2A Communication]
 
-    A2A_ESG --> ESGAgent[ESG Agent<br/>Claude Sonnet 4.5<br/>Samsung C&T Specialist]
+    A2A_Knowledge --> KnowledgeAgent[Knowledge Agent<br/>Claude Sonnet 4.5<br/>Internal Specialist]
     A2A_Research --> ResearchAgent[Research Agent<br/>Claude Sonnet 4.5<br/>Web Search Specialist]
 
     A2A_Plan --> Planner[Planner Agent<br/>Claude Sonnet 4.5<br/>JSON Plan Creator]
     Planner -->|ExecutionPlan JSON| Executor[Executor<br/>Sequential + Early Termination]
 
-    Executor -->|Step: kb_query| ESGAgent
+    Executor -->|Step: kb_query| KnowledgeAgent
     Executor -->|Step: web_search| ResearchAgent
     Executor -->|Step: aggregate| Aggregator[Aggregator Agent<br/>Claude Sonnet 4.5<br/>Data Synthesizer]
     Executor -->|Step: compare| Aggregator
 
     A2A_Report --> ReportAgent[Report Agent<br/>Claude Haiku 4.5<br/>Intelligent Report Generator]
-    ReportAgent -->|If data insufficient| ReportA2A_ESG[get_additional_esg_data<br/>A2A to ESG Agent]
+    ReportAgent -->|If data insufficient| ReportA2A_Knowledge[get_additional_knowledge_data<br/>A2A to Knowledge Agent]
     ReportAgent -->|If data insufficient| ReportA2A_Research[get_additional_research_data<br/>A2A to Research Agent]
-    ReportA2A_ESG --> ESGAgent
+    ReportA2A_Knowledge --> KnowledgeAgent
     ReportA2A_Research --> ResearchAgent
 
-    ESGAgent -->|MCP Tool| MCP_KB[Bedrock KB Tool<br/>get_esg_knowledge<br/>Hybrid Search]
+    KnowledgeAgent -->|MCP Tool| MCP_KB[Bedrock KB Tool<br/>get_knowledge<br/>Hybrid Search]
     ResearchAgent -->|MCP Tools| MCP_Search[DuckDuckGo Tools<br/>web_search<br/>news_search]
     ReportAgent -->|3-Stage Generation| MCP_PDF[HTML2PDF Tool<br/>Puppeteer<br/>scale 80%]
 
@@ -93,7 +93,7 @@ flowchart TD
     style Supervisor fill:#FF6B6B,stroke:#C92A2A,stroke-width:3px,color:#fff
     style Planner fill:#4ECDC4,stroke:#087F5B,stroke-width:2px,color:#fff
     style Executor fill:#4ECDC4,stroke:#087F5B,stroke-width:2px,color:#fff
-    style ESGAgent fill:#95E1D3,stroke:#0CA678,stroke-width:2px
+    style KnowledgeAgent fill:#95E1D3,stroke:#0CA678,stroke-width:2px
     style ResearchAgent fill:#95E1D3,stroke:#0CA678,stroke-width:2px
     style Aggregator fill:#95E1D3,stroke:#0CA678,stroke-width:2px
     style ReportAgent fill:#95E1D3,stroke:#0CA678,stroke-width:2px
@@ -102,11 +102,11 @@ flowchart TD
     style MCP_PDF fill:#FFE66D,stroke:#F59F00,stroke-width:2px
     style BedrockKB fill:#A8DADC,stroke:#1864AB,stroke-width:2px
     style BedrockRuntime fill:#A8DADC,stroke:#1864AB,stroke-width:2px
-    style A2A_ESG fill:#FFB4A2,stroke:#E03131,stroke-width:2px
+    style A2A_Knowledge fill:#FFB4A2,stroke:#E03131,stroke-width:2px
     style A2A_Research fill:#FFB4A2,stroke:#E03131,stroke-width:2px
     style A2A_Plan fill:#FFB4A2,stroke:#E03131,stroke-width:2px
     style A2A_Report fill:#FFB4A2,stroke:#E03131,stroke-width:2px
-    style ReportA2A_ESG fill:#FFB4A2,stroke:#E03131,stroke-width:2px
+    style ReportA2A_Knowledge fill:#FFB4A2,stroke:#E03131,stroke-width:2px
     style ReportA2A_Research fill:#FFB4A2,stroke:#E03131,stroke-width:2px
 ```
 
@@ -147,7 +147,7 @@ flowchart TD
 
 **A2A Tools (3):**
 ```python
-1. call_esg_agent(query) → ESG Agent → Bedrock KB
+1. call_knowledge_agent(query) → Knowledge Agent → Bedrock KB
 2. call_research_agent(query) → Research Agent → DuckDuckGo
 3. create_and_execute_plan(query) → Planner + Executor
 4. create_detailed_report(topic, previous_analysis) → Report Agent
@@ -155,25 +155,24 @@ flowchart TD
 
 **Routing Logic (LLM Decides):**
 - Greeting/chitchat → Direct response
-- Single company ESG → call_esg_agent
-- External company → call_research_agent
+- Internal knowledge → call_knowledge_agent
+- External information → call_research_agent
 - Multi-company comparison → create_and_execute_plan
 - "보고서" (report) keyword → create_detailed_report
 
 **Implementation**: `src/agents/supervisor_agent_v2.py`
 
-### 2. ESG Agent (Specialist)
+### 2. Knowledge Agent (Specialist)
 
 **Model**: `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
 
-**Role**: Samsung C&T ESG knowledge expert
+**Role**: Internal knowledge expert
 
 **Data Source**:
 - AWS Bedrock Knowledge Base (YOUR_KB_ID)
-- Samsung C&T 2025 Sustainability Report
-- 124 pages, 571KB Markdown, 35 images
+- Enterprise sustainability reports
 
-**MCP Tool**: `get_esg_knowledge(query, num_results=10)`
+**MCP Tool**: `get_knowledge(query, num_results=10)`
 
 **Answer Style (Adaptive):**
 - Chat mode: 3-5 sentences (concise)
@@ -189,7 +188,7 @@ flowchart TD
 
 **Model**: `global.anthropic.claude-sonnet-4-5-20250929-v1:0`
 
-**Role**: External ESG information and competitor research
+**Role**: External information and competitive research
 
 **MCP Tools:**
 - `web_search(query, max_results=10)` - General web search
@@ -292,7 +291,7 @@ COMPARE → Aggregator Agent
 **Tools (3):**
 ```python
 1. generate_detailed_report - HTML/PDF creation
-2. get_additional_esg_data - Samsung C&T KB queries (A2A)
+2. get_additional_knowledge_data - Internal KB queries (A2A)
 3. get_additional_research_data - External web search (A2A)
 ```
 
@@ -311,7 +310,7 @@ IF previous_analysis sufficient:
     → Generate report (3 stages)
 
 IF previous_analysis insufficient:
-    → get_additional_esg_data / get_additional_research_data
+    → get_additional_knowledge_data / get_additional_research_data
     → Generate report
 
 IF data unavailable from KB/Web:
@@ -334,23 +333,23 @@ Strands Agents uses **agents as tools** pattern:
 from strands import Agent, tool
 
 # Specialized agents
-esg_agent = Agent(
+knowledge_agent = Agent(
     model="claude-sonnet-4.5",
-    tools=[get_esg_knowledge],
-    system_prompt="Samsung C&T specialist..."
+    tools=[get_knowledge],
+    system_prompt="Internal knowledge specialist..."
 )
 
 # Wrap as tool for A2A
 @tool
-def call_esg_agent(query: str) -> str:
-    """Call ESG specialist."""
-    response = esg_agent(query)  # ← A2A communication
+def call_knowledge_agent(query: str) -> str:
+    """Call knowledge specialist."""
+    response = knowledge_agent(query)  # ← A2A communication
     return str(response)
 
 # Supervisor uses A2A tools
 supervisor = Agent(
     model="claude-sonnet-4.5",
-    tools=[call_esg_agent, call_research_agent, ...],
+    tools=[call_knowledge_agent, call_research_agent, ...],
     system_prompt="Route questions..."
 )
 ```
@@ -359,15 +358,15 @@ supervisor = Agent(
 
 #### Flow 1: Simple Question
 ```
-User: "삼성물산 탄소배출량은?"
+User: "탄소배출량은?"
   ↓
 Supervisor (LLM decides)
   ↓
-call_esg_agent (A2A)
+call_knowledge_agent (A2A)
   ↓
-ESG Agent
+Knowledge Agent
   ↓
-MCP: get_esg_knowledge (KB search)
+MCP: get_knowledge (KB search)
   ↓
 User: "543만 톤CO2e, 2030년까지 30% 감축 목표입니다."
 
@@ -376,7 +375,7 @@ User: "543만 톤CO2e, 2030년까지 30% 감축 목표입니다."
 
 #### Flow 2: Complex Comparison
 ```
-User: "삼성물산과 GS건설 LTIR 비교"
+User: "회사 A와 회사 B의 LTIR 비교"
   ↓
 Supervisor (LLM decides)
   ↓
@@ -385,19 +384,19 @@ create_and_execute_plan (A2A)
 Planner → JSON Plan (8 steps)
   ↓
 Executor:
-  Step 1-2: call_research_agent (A2A) → GS건설 LTIR
-  Step 3: call_esg_agent (A2A) → 삼성물산 LTIR
+  Step 1-2: call_research_agent (A2A) → Company B LTIR
+  Step 3: call_knowledge_agent (A2A) → Company A LTIR
   Step 4: Aggregator (A2A) → 비교 분석
   ↓ (Early termination: >800 chars)
-User: "삼성물산 0.15, GS건설 0.18. 삼성물산이 우수합니다."
+User: "Company A 0.15, Company B 0.18. Company A가 우수합니다."
 
 (15-20 seconds, 8-10 tool calls, early termination)
 ```
 
 #### Flow 3: Report Generation
 ```
-1. User: "삼성물산 지속가능성 공시 의무는?"
-   → Supervisor → call_esg_agent → 답변
+1. User: "지속가능성 공시 의무는?"
+   → Supervisor → call_knowledge_agent → 답변
 
 2. User: "보고서 만들어줘"
    → Supervisor (conversation history 전달)
@@ -410,7 +409,7 @@ User: "삼성물산 0.15, GS건설 0.18. 삼성물산이 우수합니다."
    Report Agent (Haiku 4.5):
      • Evaluate: 이전 답변 충분한가?
      • Yes → generate_detailed_report (3 stages)
-     • No → get_additional_esg_data → generate (3 stages)
+     • No → get_additional_knowledge_data → generate (3 stages)
    ↓
    Stage 1: Executive Summary (5s)
    Stage 2: Detailed Analysis (8s)
@@ -418,7 +417,7 @@ User: "삼성물산 0.15, GS건설 0.18. 삼성물산이 우수합니다."
    ↓
    HTML + PDF 생성
    ↓
-   User: reports/esg_report_지속가능성_공시_의무_20251122_140530.html/pdf
+   User: reports/report_지속가능성_공시_의무_20251122_140530.html/pdf
 
 (15-20 seconds total, no timeout)
 ```
@@ -431,7 +430,7 @@ User: "삼성물산 0.15, GS건설 0.18. 삼성물산이 우수합니다."
 
 **Location**: `src/tools/bedrock_kb_tool.py`
 
-**Tool**: `get_esg_knowledge(query: str, num_results: int = 10)`
+**Tool**: `get_knowledge(query: str, num_results: int = 10)`
 
 **Configuration:**
 - KB ID: `YOUR_KB_ID`
@@ -439,18 +438,14 @@ User: "삼성물산 0.15, GS건설 0.18. 삼성물산이 우수합니다."
 - Region: us-west-2
 - Profile: default (or your custom AWS profile)
 
-**Data Source**: Samsung C&T 2025 Sustainability Report
-- 124 pages
-- 571KB Markdown
-- 35 extracted images
-- OCR with Claude Sonnet 4.5 (450 DPI, 95%+ accuracy)
+**Data Source**: Enterprise sustainability reports processed with Claude Sonnet 4.5 OCR (450 DPI, 95%+ accuracy)
 
 **Usage:**
 ```python
-from src.tools import get_esg_knowledge
+from src.tools import get_knowledge
 
-result = get_esg_knowledge(
-    query="Samsung C&T carbon emissions 2024",
+result = get_knowledge(
+    query="carbon emissions 2024",
     num_results=10
 )
 ```
@@ -472,8 +467,8 @@ result = get_esg_knowledge(
 ```python
 from src.tools import web_search, news_search
 
-web_result = web_search("GS E&C ESG report 2024")
-news_result = news_search("ESG regulations Korea")
+web_result = web_search("sustainability report 2024")
+news_result = news_search("sustainability regulations")
 ```
 
 ### MCP Server 3: HTML2PDF
@@ -516,8 +511,8 @@ Previous answer is brief or incomplete
 Report Agent: Evaluate → Insufficient
   ↓
 Identify missing data:
-  - Samsung C&T data? → get_additional_esg_data
-  - External company? → get_additional_research_data
+  - Internal data? → get_additional_knowledge_data
+  - External information? → get_additional_research_data
   ↓
 Generate report with complete data (3 stages)
 ```
@@ -677,119 +672,18 @@ if response.startswith("CLARIFICATION_NEEDED:"):
     response = agent(enhanced_query)  # Retry with clarification
 ```
 
-### Clarification Strategy (Lenient)
-
-**Make reasonable assumptions:**
-- "주요 회사" → Top 3-5 by market cap
-- "최근" → Last year (2023-2024)
-- "어느 정도" → Compare with industry average
-
-**Only ask when:**
-- Critical information missing
-- Multiple valid interpretations
-- Cannot proceed without input
-
-**Max rounds**: 3 (prevent user frustration)
-
----
-
-## Usage Examples
-
-### Example 1: Simple Question
-
-```
-You: 삼성물산의 탄소배출량은?
-
-Bot: 삼성물산의 2024년 탄소배출량은 543만 톤CO2e이며,
-2030년까지 30% 감축을 목표로 합니다.
-재생에너지 전환과 에너지 효율화를 통해 달성할 예정입니다.
-
-(3-5 seconds, 2 tool calls: call_esg_agent → get_esg_knowledge)
-```
-
-### Example 2: Complex Comparison
-
-```
-You: 삼성물산 LTIR과 GS건설, 현대건설 LTIR 비교해줘
-
-Bot: [Planning with Planner-Executor...]
-
-삼성물산의 LTIR은 0.15로 업계 평균 0.20보다 우수합니다.
-GS건설은 0.18, 현대건설은 0.22를 기록했습니다.
-삼성물산이 3개사 중 가장 낮은 재해율을 보이며 업계 최고 수준입니다.
-
-더 상세한 분석이 필요하시면 '보고서 만들어줘'라고 요청해주세요.
-
-(15-20 seconds, 8-10 tool calls with early termination)
-```
-
-### Example 3: Report Generation (Sufficient Data)
-
-```
-You: 삼성물산 산림벌채 리스크는?
-
-Bot: [상세 답변 with KB data...]
-
-You: 보고서 만들어줘
-
-Bot: [Generating report in 3 stages...]
-Stage 1/3: Executive Summary... ✓
-Stage 2/3: Detailed Analysis... ✓
-Stage 3/3: Conclusions... ✓
-Converting HTML to PDF...
-PDF conversion completed!
-
-보고서 파일:
-- HTML: reports/esg_report_산림벌채_리스크_20251122_140530.html
-- PDF: reports/esg_report_산림벌채_리스크_20251122_140530.pdf
-
-(15-18 seconds, no data re-collection)
-```
-
-### Example 4: Report with Data Collection
-
-```
-You: 산림벌채 리스크 보고서 만들어줘
-
-Bot: [Report Agent evaluating...]
-[Collecting additional KB data...]
-[Generating report in 3 stages...]
-
-보고서 파일:
-- HTML: reports/esg_report_산림벌채_리스크_20251122_140600.html
-- PDF: reports/esg_report_산림벌채_리스크_20251122_140600.pdf
-
-(20-25 seconds, includes data collection + 3-stage generation)
-```
-
-### Example 5: Clarification Loop
-
-```
-You: 주요 건설사들의 안전 성과는?
-
-Bot: 어떤 건설사들을 비교하고 싶으신가요?
-(예: 삼성물산, 현대건설, GS건설, 대림산업)
-
-You: 삼성물산, GS건설, 현대건설
-
-Bot: [Processing with clarification...]
-[Returns comparison results]
-
-(2-3 clarification rounds max)
-```
-
 ---
 
 ## Project Structure
 
 ```
-sct-esg/
+agentic-multi-agent/
 ├── src/
 │   ├── agents/                    # Strands Agents
 │   │   ├── supervisor_agent_v2.py # Orchestrator (Sonnet 4.5)
 │   │   ├── planner_agent.py       # Plan creator (Sonnet 4.5)
 │   │   ├── executor_agent.py      # Plan executor
-│   │   ├── esg_agent.py           # Samsung C&T specialist (Sonnet 4.5)
+│   │   ├── esg_agent.py           # Knowledge specialist (Sonnet 4.5)
 │   │   ├── research_agent.py      # Web search specialist (Sonnet 4.5)
 │   │   ├── aggregator_agent.py    # Data synthesizer (Sonnet 4.5)
 │   │   ├── report_agent.py        # Report generator (Haiku 4.5)
@@ -837,7 +731,7 @@ sct-esg/
 ### AWS Services
 - **Bedrock Runtime** - LLM inference (Claude models)
 - **Bedrock Agent Runtime** - Knowledge Base retrieval
-- **Knowledge Base** YOUR_KB_ID - Samsung C&T ESG documents
+- **Knowledge Base** YOUR_KB_ID - Enterprise sustainability documents
 
 ### MCP Integration
 - **Bedrock KB** - Python @tool decorator
@@ -850,7 +744,7 @@ sct-esg/
 |-------|-------|--------|
 | Supervisor | Sonnet 4.5 | Complex routing decisions |
 | Planner | Sonnet 4.5 | JSON plan generation |
-| ESG Agent | Sonnet 4.5 | Accurate KB interpretation |
+| Knowledge Agent | Sonnet 4.5 | Accurate KB interpretation |
 | Research Agent | Sonnet 4.5 | Web data synthesis |
 | Aggregator | Sonnet 4.5 | Comparative analysis |
 | **Report Agent** | **Haiku 4.5** | **Fast HTML generation, no timeout** |
@@ -871,8 +765,8 @@ sct-esg/
 
 ```bash
 # 1. Clone repository
-git clone <repository-url>
-cd sct-esg
+git clone https://github.com/jesamkim/agentic-multi-agent.git
+cd agentic-multi-agent
 
 # 2. Create virtual environment
 python3.12 -m venv venv
@@ -932,7 +826,7 @@ python src/chatbot_cli.py
 
 ### CLI Commands
 
-- **Your question** - Ask about ESG topics
+- **Your question** - Ask about sustainability topics
 - `help` - Show available commands
 - `history` - View conversation history
 - `clear` - Clear conversation history
@@ -1029,66 +923,21 @@ pytest tests/test_supervisor_agent.py -v
 
 ---
 
-## Best Practices
-
-### Question Formulation
-
-**Good Questions (clear and specific):**
-- "삼성물산의 2024년 탄소배출량은?"
-- "삼성물산과 GS건설의 LTIR을 비교해줘"
-- "현대자동차 ESG 보고서 최신 내용"
-
-**Unclear Questions (will trigger clarification):**
-- "주요 회사들의 성과는?" (which companies?)
-- "ESG 현황 알려줘" (which company? which aspect?)
-- "최근 비교 분석" (compare what?)
-
-### Efficient Usage
-
-1. **Be specific** - Name companies and metrics explicitly
-2. **Ask summary first** - Get concise answer quickly
-3. **Request report if needed** - "보고서 만들어줘" for detailed analysis
-4. **Provide context** - Follow-up questions reference previous discussion
-
-### Report Generation Tips
-
-**Best practice:**
-```
-Step 1: Ask detailed question first
-User: "삼성물산 본사와 해외 자회사의 매출, 자산을 고려했을 때
-       지속가능성 공시 의무화에 해당되는 국가는?"
-Bot: [Comprehensive answer...]
-
-Step 2: Request report
-User: "보고서 만들어줘"
-Bot: [Generates HTML/PDF from previous answer - fast]
-```
-
-**Avoid:**
-```
-User: "보고서 만들어줘" (without previous discussion)
-Bot: 먼저 관련 질문을 해주세요...
-```
-
----
-
 ## Technical Details
 
 ### Document Processing Pipeline
 
 **PDF to Markdown Conversion:**
 ```
-Samsung C&T PDF (12.6MB, 124 pages)
+Enterprise PDF
     ↓
 pdf2image (450 DPI PNG)
     ↓
 Claude Sonnet 4.5 OCR (Vision API)
     ↓
-Markdown (571KB, 9,979 lines)
+Markdown with images
     ↓
 Image Extraction (PyMuPDF)
-    ↓
-35 images with metadata
     ↓
 Bedrock Knowledge Base ingestion
     ↓
@@ -1166,7 +1015,7 @@ Built by AWS Solutions Architect as Demo for demonstrating:
 - AWS Bedrock Claude models
 - Production-ready AI systems
 
-**Data Source**: Samsung C&T 2025 Sustainability Report (publicly available)
+**Data Source**: Enterprise sustainability reports (publicly available)
 
 ---
 
@@ -1176,4 +1025,4 @@ Built by AWS Solutions Architect as Demo for demonstrating:
 - **Amazon Bedrock** - Claude Sonnet 4.5 & Haiku 4.5
 - **Anthropic** - Claude models
 - **Model Context Protocol** - Standardized tool interface
-- **Samsung C&T** - Public sustainability report
+- Public sustainability reports for reference data

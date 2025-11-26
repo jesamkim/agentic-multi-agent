@@ -13,7 +13,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-RESEARCH_SYSTEM_PROMPT = """You are an efficient research specialist for ESG information.
+RESEARCH_SYSTEM_PROMPT = """You are an efficient research specialist for sustainability information.
 
 **Core Principles:**
 1. EFFICIENCY FIRST - Use minimal searches to get key information

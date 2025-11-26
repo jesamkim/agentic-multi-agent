@@ -1,8 +1,8 @@
 """
 Bedrock Knowledge Base Tools for Strands Agents
 
-Provides tools to retrieve ESG knowledge from Samsung C&T's
-sustainability report via AWS Bedrock Knowledge Base.
+Provides tools to retrieve knowledge from enterprise
+sustainability reports via AWS Bedrock Knowledge Base.
 """
 
 import boto3
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class BedrockKBRetriever:
-    """Bedrock Knowledge Base retriever for ESG information."""
+    """Bedrock Knowledge Base retriever for sustainability information."""
     
     def __init__(
         self,
@@ -109,21 +109,21 @@ def get_retriever() -> BedrockKBRetriever:
 @tool
 def get_esg_knowledge(query: str, num_results: int = 10) -> str:
     """
-    Retrieve ESG knowledge from Samsung C&T's 2025 Sustainability Report.
-    
-    Use this tool to find information about Samsung C&T's:
+    Retrieve knowledge from enterprise sustainability reports.
+
+    Use this tool to find information about:
     - Environmental initiatives and carbon emissions
     - Social responsibility and employee welfare
     - Governance structure and policies
     - Sustainability goals and achievements
-    - ESG performance metrics and data
-    
+    - Performance metrics and data
+
     Args:
-        query: Search query about Samsung C&T's ESG practices
+        query: Search query about sustainability practices
         num_results: Number of results to retrieve (default: 10)
-    
+
     Returns:
-        Formatted search results from the sustainability report
+        Formatted search results from the knowledge base
     """
     try:
         retriever = get_retriever()
@@ -141,7 +141,7 @@ def get_esg_knowledge(query: str, num_results: int = 10) -> str:
         return formatted
         
     except Exception as e:
-        return f"Error retrieving ESG knowledge: {str(e)}"
+        return f"Error retrieving knowledge: {str(e)}"
 
 
 __all__ = ['BedrockKBRetriever', 'get_retriever', 'get_esg_knowledge']

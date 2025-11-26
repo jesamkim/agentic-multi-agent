@@ -1,7 +1,7 @@
 """
-ESG Agent - Strands Agents Implementation
+Knowledge Agent - Strands Agents Implementation
 
-Specialized agent for answering ESG questions about Samsung C&T
+Specialized agent for answering questions about enterprise sustainability
 using Bedrock Knowledge Base retrieval.
 """
 
@@ -12,8 +12,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# System prompt for ESG specialist
-ESG_SYSTEM_PROMPT = """You are an ESG specialist for Samsung C&T.
+# System prompt for Knowledge specialist
+ESG_SYSTEM_PROMPT = """You are a knowledge specialist for enterprise sustainability.
 
 **Core Principles:**
 1. ADAPTIVE OUTPUT - Match response depth to request type
@@ -48,7 +48,7 @@ If query contains "상세", "comprehensive", "detailed", "보고서용":
 - Match user's language (Korean/English)
 - Professional and accurate
 
-Knowledge Base: Samsung C&T 2025 Sustainability Report (124 pages)
+**Knowledge Base:** Enterprise sustainability reports and documentation
 
 Remember: Adapt detail level to context. Brief for chat, comprehensive for reports."""
 
