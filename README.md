@@ -1,6 +1,6 @@
-# Multi-Agent System DEMO using Samsung C&T ESG Report
+# Agentic AI Multi-Agent DEMO
 
-> AWS Solutions Architect PoC: Production-ready multi-agent system powered by Strands Agents, A2A communication, and Model Context Protocol (MCP)
+> AWS Solutions Architect Demo: Production-ready multi-agent system powered by Strands Agents, A2A communication, and Model Context Protocol (MCP)
 
 [![Amazon Bedrock](https://img.shields.io/badge/AWS-Bedrock-FF9900?logo=amazon-aws)](https://aws.amazon.com/bedrock/)
 [![Claude Sonnet 4.5](https://img.shields.io/badge/Claude-Sonnet%204.5-8A2BE2)](https://www.anthropic.com/claude)
@@ -1158,7 +1158,7 @@ MIT License
 
 ## Author
 
-Built by AWS Solutions Architect as PoC for demonstrating:
+Built by AWS Solutions Architect as Demo for demonstrating:
 - Agentic multi-agent patterns
 - Agent-to-Agent (A2A) communication
 - Model Context Protocol (MCP) integration
