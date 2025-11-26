@@ -53,7 +53,7 @@ output/
 
 # PDF files and reports
 pdf/
-reports/
+reports/*.html
 
 # Node.js
 node_modules/
